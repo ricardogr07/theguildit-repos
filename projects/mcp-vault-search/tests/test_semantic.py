@@ -14,11 +14,18 @@ class FakeEmbedder:
 
 class SemanticTest(TestCase):
     def test_chunks_normalize_the_vault_root_before_computing_relative_paths(self):
-        with TemporaryDirectory() as temp:
+        # Keep the fixture on the working directory's drive on Windows.
+        with TemporaryDirectory(dir=Path.cwd()) as temp:
             root = Path(temp)
             (root / "nested").mkdir()
             (root / "mcp.md").write_text("MCP", encoding="utf-8")
             self.assertEqual(note_chunks(root / "nested" / ".."), [("mcp.md", "MCP")])
+            relative = Path(os.path.relpath(root))
+            self.assertFalse(relative.is_absolute())
+            self.assertEqual(note_chunks(relative), [("mcp.md", "MCP")])
+            output = root / "index.json"
+            build_index(relative, FakeEmbedder(), output)
+            self.assertEqual([chunk.path for chunk in load_index(output)], ["mcp.md"])
 
     def test_index_excludes_external_link(self):
         with TemporaryDirectory() as temp, TemporaryDirectory() as outside:
