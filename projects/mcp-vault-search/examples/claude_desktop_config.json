@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "vault-search": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:/RUTA/ABSOLUTA/mcp-vault-search",
+        "run",
+        "mcp-vault-search"
+      ],
+      "env": {
+        "VAULT_PATH": "C:/RUTA/ABSOLUTA/tu-vault"
+      }
+    }
+  }
+}

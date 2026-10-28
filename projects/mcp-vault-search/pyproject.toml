@@ -1,0 +1,21 @@
+[project]
+name = "mcp-vault-search"
+version = "0.1.0"
+description = "Servidor MCP local para buscar notas Markdown"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["mcp[cli]>=2.0.0"]
+
+[project.optional-dependencies]
+semantic = ["sentence-transformers>=5.0"]
+
+[project.scripts]
+mcp-vault-search = "mcp_vault_search.server:main"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
