@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
-from mcp_vault_search.semantic import build_index, load_index, semantic_search
+from mcp_vault_search.semantic import build_index, load_index, note_chunks, semantic_search
 
 
 class FakeEmbedder:
@@ -13,6 +13,13 @@ class FakeEmbedder:
 
 
 class SemanticTest(TestCase):
+    def test_chunks_normalize_the_vault_root_before_computing_relative_paths(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "nested").mkdir()
+            (root / "mcp.md").write_text("MCP", encoding="utf-8")
+            self.assertEqual(note_chunks(root / "nested" / ".."), [("mcp.md", "MCP")])
+
     def test_index_excludes_external_link(self):
         with TemporaryDirectory() as temp, TemporaryDirectory() as outside:
             root = Path(temp)

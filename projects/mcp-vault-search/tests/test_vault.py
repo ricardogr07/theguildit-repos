@@ -77,7 +77,7 @@ class VaultTest(TestCase):
             read_note(self.root, "a-bad.md")
 
     def test_unreadable_note_does_not_hide_other_results(self):
-        blocked = self.root / "a-blocked.md"
+        blocked = (self.root / "a-blocked.md").resolve()
         blocked.write_text("MCP", encoding="utf-8")
         original_open = Path.open
 
