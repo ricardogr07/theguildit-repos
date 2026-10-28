@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
@@ -12,6 +13,23 @@ class FakeEmbedder:
 
 
 class SemanticTest(TestCase):
+    def test_index_excludes_external_link(self):
+        with TemporaryDirectory() as temp, TemporaryDirectory() as outside:
+            root = Path(temp)
+            secret = Path(outside) / "secret.md"
+            secret.write_text("PRIVATE_SENTINEL", encoding="utf-8")
+            (root / "mcp.md").write_text("MCP", encoding="utf-8")
+            try:
+                (root / "linked.md").symlink_to(secret)
+            except OSError as exc:
+                if os.name != "nt":
+                    raise
+                self.skipTest(f"El entorno no permite crear enlaces: {exc}")
+            with self.assertLogs("mcp_vault_search.vault", level="WARNING"):
+                chunks = build_index(root, FakeEmbedder(), root / "index.json")
+            self.assertEqual([chunk.path for chunk in chunks], ["mcp.md"])
+            self.assertNotIn("PRIVATE_SENTINEL", (root / "index.json").read_text(encoding="utf-8"))
+
     def test_index_is_json_and_query_ranks_related_note_first(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)
