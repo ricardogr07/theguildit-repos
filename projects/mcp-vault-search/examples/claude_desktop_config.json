@@ -6,6 +6,7 @@
         "--directory",
         "C:/RUTA/ABSOLUTA/mcp-vault-search",
         "run",
+        "--locked",
         "mcp-vault-search"
       ],
       "env": {

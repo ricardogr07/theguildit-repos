@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol, Sequence
 
-from .vault import markdown_files
+from .vault import markdown_files, vault_root
 
 
 class Embedder(Protocol):
@@ -23,6 +23,7 @@ def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str]]:
     if max_chars < 100:
         raise ValueError("max_chars debe ser al menos 100")
 
+    root = vault_root(root)
     chunks: list[tuple[str, str]] = []
     for path in markdown_files(root):
         paragraphs = [part.strip() for part in path.read_text(encoding="utf-8").split("\n\n") if part.strip()]

@@ -1,0 +1,50 @@
+name: MCP Vault Search
+
+on:
+  push:
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-search.yml"
+  pull_request:
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-search.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: projects/mcp-vault-search
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv run --locked python -m unittest discover -s tests -v
+
+  package:
+    name: Wheel installation and MCP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv build
+      - name: Test installed wheel without editable source
+        run: >-
+          uv run --no-cache --isolated --no-project
+          --with ./dist/mcp_vault_search-0.1.0-py3-none-any.whl
+          python -m unittest discover -s tests -v

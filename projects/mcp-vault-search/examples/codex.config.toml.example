@@ -1,0 +1,9 @@
+# Copy this block to your Codex config.toml and replace both absolute paths.
+# Start with examples/vault; choose a small, reviewed vault for real use.
+[mcp_servers.vault_search]
+command = "uv"
+args = ["--directory", "C:/RUTA/ABSOLUTA/theguildit-repos/projects/mcp-vault-search", "run", "--locked", "mcp-vault-search"]
+enabled_tools = ["search_notes", "read_note"]
+
+[mcp_servers.vault_search.env]
+VAULT_PATH = "C:/RUTA/ABSOLUTA/theguildit-repos/projects/mcp-vault-search/examples/vault"
