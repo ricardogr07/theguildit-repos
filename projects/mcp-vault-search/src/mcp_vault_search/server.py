@@ -9,7 +9,7 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
-from mcp_vault_search.semantic import build_index, semantic_search
+from mcp_vault_search.semantic import build_index, semantic_search, Chunk
 from mcp_vault_search.vault import read_note as read_note_file
 from mcp_vault_search.vault import search_notes as search_vault
 from mcp_vault_search.vault import vault_root
@@ -17,8 +17,9 @@ from mcp_vault_search.vault import vault_root
 logger = logging.getLogger(__name__)
 mcp = MCPServer("mcp-vault-search")
 
-# Lazy-loaded semantic index
-_semantic_index = None
+# Lazy-loaded semantic index and embedder (cached across queries)
+_semantic_index: list[Chunk] | None = None
+_embedder = None
 _semantic_enabled = bool(os.environ.get("VAULT_SEMANTIC"))
 
 
@@ -26,20 +27,29 @@ def configured_root() -> Path:
     return vault_root(os.environ.get("VAULT_PATH", "examples/vault"))
 
 
-def _ensure_semantic_index():
-    """Load or build semantic index on first use."""
-    global _semantic_index
-    if _semantic_index is not None:
-        return _semantic_index
+def _get_embedder():
+    """Get or create embedder (cached across all queries)."""
+    global _embedder
+    if _embedder is not None:
+        return _embedder
 
-    root = configured_root()
     try:
         import sentence_transformers
     except ImportError:
         raise ToolError("sentence-transformers not installed; install with --extra semantic")
 
-    embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-    _semantic_index = build_index(root, embedder, root / ".index.json")
+    _embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    return _embedder
+
+
+def _ensure_semantic_index():
+    """Build semantic index on first use (in-memory only, no persistence)."""
+    global _semantic_index
+    if _semantic_index is not None:
+        return _semantic_index
+
+    embedder = _get_embedder()
+    _semantic_index = build_index(configured_root(), embedder)
     return _semantic_index
 
 
@@ -72,14 +82,8 @@ if _semantic_enabled:
     def search_semantic(query: str, limit: int = 5) -> str:
         """Busca notas por similitud semántica usando embeddings."""
         try:
+            embedder = _get_embedder()
             index = _ensure_semantic_index()
-            # Re-import embedder for each search
-            try:
-                import sentence_transformers
-                embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-            except ImportError as exc:
-                raise ToolError("sentence-transformers no disponible") from exc
-
             results = semantic_search(index, query, embedder, configured_root(), limit)
         except ValueError as exc:
             raise ToolError(str(exc)) from exc
