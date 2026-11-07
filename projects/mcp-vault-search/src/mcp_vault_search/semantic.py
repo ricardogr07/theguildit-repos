@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol, Sequence
 
-from .vault import markdown_files, vault_root
+from .vault import markdown_files, vault_root, _note_path
 
 
 class Embedder(Protocol):
@@ -20,7 +20,7 @@ class Chunk:
     vector: list[float]
     start_line: int = 0
     end_line: int = 0
-    content_hash: str = ""
+    note_hash: str = ""  # SHA-256 hash of full note; same for all chunks from note
 
 
 def _split_paragraph(paragraph: str, max_chars: int) -> list[str]:
@@ -42,15 +42,26 @@ def _split_paragraph(paragraph: str, max_chars: int) -> list[str]:
     return result or [paragraph]
 
 
-def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str, int, int]]:
-    """Generate (path, text, start_line, end_line) for each paragraph."""
+def _compute_content_hash(text: str) -> str:
+    """SHA-256 hash of normalized text."""
+    normalized = "\n".join(line.strip() for line in text.split("\n") if line.strip())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str, int, int, str]]:
+    """Generate (path, text, start_line, end_line, note_hash) for each paragraph."""
     if max_chars < 100:
         raise ValueError("max_chars debe ser al menos 100")
 
     root = vault_root(root)
-    chunks: list[tuple[str, str, int, int]] = []
+    chunks: list[tuple[str, str, int, int, str]] = []
     for path in markdown_files(root):
-        content = path.read_text(encoding="utf-8")
+        try:
+            content = path.read_text(encoding="utf-8")
+        except UnicodeError:
+            continue
+
+        note_hash = _compute_content_hash(content)
         lines = content.split("\n")
 
         # Group lines into paragraphs separated by blank lines
@@ -76,7 +87,7 @@ def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str, int,
             for sub_para in _split_paragraph(para_text, max_chars):
                 candidate = f"{current_chunk}\n\n{sub_para}".strip() if current_chunk else sub_para
                 if current_chunk and len(candidate) > max_chars:
-                    chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, end_line))
+                    chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, end_line, note_hash))
                     current_chunk = sub_para
                     chunk_start = start_line
                 else:
@@ -85,23 +96,18 @@ def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str, int,
                         chunk_start = start_line
 
         if current_chunk:
-            chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, len(lines) - 1))
+            chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, len(lines) - 1, note_hash))
 
     return chunks
 
 
-def _compute_content_hash(text: str) -> str:
-    """SHA-256 hash of normalized text."""
-    normalized = "\n".join(line.strip() for line in text.split("\n") if line.strip())
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-
-
-def build_index(root: Path, embedder: Embedder, output: Path) -> list[Chunk]:
+def build_index(root: Path, embedder: Embedder) -> list[Chunk]:
+    """Build in-memory index from vault. Returns chunks without persistence."""
     source = note_chunks(root)
     if not source:
         raise ValueError("No chunks found in vault")
 
-    texts = [text for _, text, _, _ in source]
+    texts = [text for _, text, _, _, _ in source]
     vectors = embedder.encode(texts, normalize_embeddings=True)
     chunks = [
         Chunk(
@@ -110,30 +116,15 @@ def build_index(root: Path, embedder: Embedder, output: Path) -> list[Chunk]:
             vector=list(map(float, vector)),
             start_line=start_line,
             end_line=end_line,
-            content_hash=_compute_content_hash(text),
+            note_hash=note_hash,
         )
-        for (path, text, start_line, end_line), vector in zip(source, vectors, strict=True)
+        for (path, text, start_line, end_line, note_hash), vector in zip(source, vectors, strict=True)
     ]
-    output.write_text(json.dumps([asdict(chunk) for chunk in chunks], ensure_ascii=False), encoding="utf-8")
     return chunks
 
 
-def load_index(path: Path) -> list[Chunk]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return [
-        Chunk(
-            path=item["path"],
-            text=item["text"],
-            vector=item["vector"],
-            start_line=item.get("start_line", 0),
-            end_line=item.get("end_line", 0),
-            content_hash=item.get("content_hash", ""),
-        )
-        for item in data
-    ]
-
-
-def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vault_root_path: Path | None = None, limit: int = 5) -> list[dict[str, object]]:
+def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vault_root_path: Path, limit: int = 5) -> list[dict[str, object]]:
+    """Search chunks by similarity, validating freshness and vault access."""
     if not query.strip():
         raise ValueError("La consulta no puede estar vacía")
     if limit < 1 or limit > 50:
@@ -146,17 +137,23 @@ def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vau
     ]
 
     results = []
-    for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True):
-        # Validate freshness if vault_root_path provided
-        if vault_root_path:
-            try:
-                note_path = vault_root_path / chunk.path
-                current_content = note_path.read_text(encoding="utf-8")
-                if _compute_content_hash(current_content) != chunk.content_hash:
-                    continue  # Content changed; skip
-            except (OSError, UnicodeError):
-                continue  # File inaccessible; skip
+    seen_paths = set()  # Track which notes we've validated in this query
 
+    for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True):
+        # Validate each note once per query
+        if chunk.path not in seen_paths:
+            seen_paths.add(chunk.path)
+            try:
+                # Apply vault access rules (same as search_notes/read_note)
+                note_path = _note_path(vault_root_path, chunk.path)
+                current_content = note_path.read_text(encoding="utf-8")
+                # Validate freshness: compare hash of full note
+                if _compute_content_hash(current_content) != chunk.note_hash:
+                    continue  # Note changed; skip all chunks from this note
+            except (OSError, UnicodeError, ValueError):
+                continue  # Note inaccessible, invalid, or outside vault; skip all chunks
+
+        # If we reach here, note passed validation; include this chunk
         results.append({
             "path": chunk.path,
             "text": chunk.text[:500],
