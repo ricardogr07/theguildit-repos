@@ -24,13 +24,23 @@ class Chunk:
 
 
 def _split_paragraph(paragraph: str, max_chars: int) -> list[str]:
-    """Split a single paragraph if it exceeds max_chars."""
+    """Split a single paragraph if it exceeds max_chars, breaking long lines if needed."""
     if len(paragraph) <= max_chars:
         return [paragraph]
     lines = paragraph.split("\n")
     result = []
     current = ""
     for line in lines:
+        # Force-break lines that exceed max_chars individually
+        if len(line) > max_chars:
+            if current:
+                result.append(current)
+                current = ""
+            # Break long line into max_chars chunks
+            for i in range(0, len(line), max_chars):
+                result.append(line[i : i + max_chars])
+            continue
+
         candidate = f"{current}\n{line}".strip() if current else line
         if current and len(candidate) > max_chars:
             result.append(current)
@@ -137,21 +147,24 @@ def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vau
     ]
 
     results = []
-    seen_paths = set()  # Track which notes we've validated in this query
+    note_validity: dict[str, bool] = {}  # Cache: path -> is_valid (True/False)
 
     for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True):
-        # Validate each note once per query
-        if chunk.path not in seen_paths:
-            seen_paths.add(chunk.path)
+        # Check validity cache; validate once per note per query
+        if chunk.path not in note_validity:
             try:
                 # Apply vault access rules (same as search_notes/read_note)
                 note_path = _note_path(vault_root_path, chunk.path)
                 current_content = note_path.read_text(encoding="utf-8")
                 # Validate freshness: compare hash of full note
-                if _compute_content_hash(current_content) != chunk.note_hash:
-                    continue  # Note changed; skip all chunks from this note
+                is_valid = _compute_content_hash(current_content) == chunk.note_hash
+                note_validity[chunk.path] = is_valid
             except (OSError, UnicodeError, ValueError):
-                continue  # Note inaccessible, invalid, or outside vault; skip all chunks
+                note_validity[chunk.path] = False  # Mark as invalid
+
+        # Skip all chunks from invalid notes
+        if not note_validity[chunk.path]:
+            continue
 
         # If we reach here, note passed validation; include this chunk
         results.append({

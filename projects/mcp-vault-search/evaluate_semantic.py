@@ -7,12 +7,13 @@ from pathlib import Path
 from mcp_vault_search.semantic import build_index, semantic_search
 from mcp_vault_search.vault import vault_root
 
-# Queries and expected targets from plan
+# Queries with expected targets and designated distractors (per plan line 74)
+# PASS: target in top 3 AND (no distractor in top 3 OR target ranks better than distractor)
 QUERIES = [
-    ("¿Cómo puede un asistente usar funciones de otras aplicaciones?", "mcp.md"),
-    ("¿Cómo encuentro algo que escribí con otras palabras?", "busqueda-semantica.md"),
-    ("¿Cómo evito que se pierda la parte final de un apunte muy extenso al procesarlo?", "fragmentos.md"),
-    ("¿Cómo evito que el asistente abra documentos fuera de la carpeta que le compartí?", "rutas-seguras.md"),
+    {"query": "¿Cómo puede un asistente usar funciones de otras aplicaciones?", "target": "mcp.md", "distractor": "contenedores.md"},
+    {"query": "¿Cómo encuentro algo que escribí con otras palabras?", "target": "busqueda-semantica.md", "distractor": "busqueda.md"},
+    {"query": "¿Cómo evito que se pierda la parte final de un apunte muy extenso al procesarlo?", "target": "fragmentos.md", "distractor": "bitacora-de-incidente.md"},
+    {"query": "¿Cómo evito que el asistente abra documentos fuera de la carpeta que le compartí?", "target": "rutas-seguras.md", "distractor": "datos-y-privacidad.md"},
 ]
 
 def main():
@@ -31,15 +32,29 @@ def main():
     print()
 
     results = []
-    for i, (query, expected_target) in enumerate(QUERIES, 1):
+    for i, q_spec in enumerate(QUERIES, 1):
+        query = q_spec["query"]
+        expected_target = q_spec["target"]
+        distractor = q_spec["distractor"]
+
         print(f"Query {i}: {query}")
         print(f"Expected target: {expected_target}")
+        print(f"Designated distractor: {distractor}")
 
         # Semantic search with access validation
         semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=5)
-        print(f"Top 3 semantic results:")
-        for j, r in enumerate(semantic_results[:3], 1):
-            print(f"  {j}. {r['path']} (score: {r['score']:.4f})")
+
+        # Group results by note (first occurrence per note)
+        seen_notes = {}
+        note_rankings = []
+        for j, r in enumerate(semantic_results, 1):
+            if r['path'] not in seen_notes:
+                seen_notes[r['path']] = j
+                note_rankings.append((r['path'], j))
+
+        print(f"Note rankings (by fragment rank):")
+        for note_path, frag_rank in note_rankings[:3]:
+            print(f"  {len(note_rankings[:note_rankings.index((note_path, frag_rank))])+1}. {note_path} (first fragment rank: {frag_rank})")
 
         # Literal search for comparison
         from mcp_vault_search.vault import search_notes
@@ -49,34 +64,45 @@ def main():
         else:
             print("Literal search found: (no matches)")
 
-        # Check if target in top 3
-        top3_paths = [r['path'] for r in semantic_results[:3]]
-        target_pos = None
-        for j, r in enumerate(semantic_results, 1):
-            if r['path'] == expected_target:
-                target_pos = j
-                break
+        # Determine PASS/FAIL: target in top 3 AND target ranks better than distractor
+        target_note_rank = seen_notes.get(expected_target)
+        distractor_note_rank = seen_notes.get(distractor)
 
-        print(f"Target position: {target_pos or 'not in top 5'}")
+        # Validate: target in top 3, and if distractor present, target must rank better
+        passes = (
+            target_note_rank is not None and target_note_rank <= 3 and
+            (distractor_note_rank is None or target_note_rank < distractor_note_rank)
+        )
+
+        print(f"Target position: {target_note_rank or 'not in top 5'}")
+        if distractor_note_rank:
+            print(f"Distractor position: {distractor_note_rank}")
+        print(f"Result: {'[PASS]' if passes else '[FAIL]'}")
         print()
 
         results.append({
             "query": query,
             "expected_target": expected_target,
-            "top_3": top3_paths,
-            "target_position": target_pos,
+            "designated_distractor": distractor,
+            "target_position": target_note_rank,
+            "distractor_position": distractor_note_rank,
+            "note_rankings": [{"note": n, "rank": r} for n, r in note_rankings],
             "full_results": semantic_results,
             "literal_matches": literal_results,
+            "pass": passes,
         })
 
     # Summary
     print("=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    for i, (query, expected_target) in enumerate(QUERIES, 1):
-        r = results[i - 1]
-        status = "[PASS]" if r['target_position'] and r['target_position'] <= 3 else "[FAIL]"
-        print(f"{i}. {status} - {expected_target} at position {r['target_position'] or 'N/A'}")
+    for i, r in enumerate(results, 1):
+        status = "[PASS]" if r['pass'] else "[FAIL]"
+        print(f"{i}. {status} - {r['expected_target']} at position {r['target_position'] or 'N/A'}", end="")
+        if r['distractor_position']:
+            print(f" (distractor at {r['distractor_position']})")
+        else:
+            print()
 
     # Write full results
     output_file = Path("evaluate_semantic_results.json")
