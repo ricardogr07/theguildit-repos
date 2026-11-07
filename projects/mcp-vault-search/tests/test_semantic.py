@@ -19,10 +19,12 @@ class SemanticTest(TestCase):
             root = Path(temp)
             (root / "nested").mkdir()
             (root / "mcp.md").write_text("MCP", encoding="utf-8")
-            self.assertEqual(note_chunks(root / "nested" / ".."), [("mcp.md", "MCP")])
+            chunks = note_chunks(root / "nested" / "..")
+            self.assertEqual([(path, text) for path, text, _, _ in chunks], [("mcp.md", "MCP")])
             relative = Path(os.path.relpath(root))
             self.assertFalse(relative.is_absolute())
-            self.assertEqual(note_chunks(relative), [("mcp.md", "MCP")])
+            chunks = note_chunks(relative)
+            self.assertEqual([(path, text) for path, text, _, _ in chunks], [("mcp.md", "MCP")])
             output = root / "index.json"
             build_index(relative, FakeEmbedder(), output)
             self.assertEqual([chunk.path for chunk in load_index(output)], ["mcp.md"])
@@ -53,8 +55,27 @@ class SemanticTest(TestCase):
             embedder = FakeEmbedder()
 
             build_index(root, embedder, index_path)
-            results = semantic_search(load_index(index_path), "agentes", embedder, limit=1)
+            index = load_index(index_path)
+            results = semantic_search(index, "agentes", embedder, vault_root_path=None, limit=1)
 
             self.assertTrue(embedder.normalized)
             self.assertEqual(results[0]["path"], "mcp.md")
             self.assertEqual(results[0]["score"], 1.0)
+
+    def test_semantic_search_skips_stale_chunks(self):
+        """When vault content changes, chunks are skipped until reindex."""
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "a.md").write_text("MCP herramientas", encoding="utf-8")
+            (root / "b.md").write_text("Contenedores Docker", encoding="utf-8")
+
+            # Build index with both notes
+            embedder = FakeEmbedder()
+            chunks = build_index(root, embedder, root / ".index.json")
+
+            # Remove one note and search with freshness check
+            (root / "a.md").unlink()
+            results = semantic_search(chunks, "MCP", embedder, vault_root_path=root, limit=5)
+
+            # Only b.md should appear (a.md skipped due to freshness check)
+            self.assertEqual([r["path"] for r in results], ["b.md"])
