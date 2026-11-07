@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -17,43 +18,122 @@ class Chunk:
     path: str
     text: str
     vector: list[float]
+    start_line: int = 0
+    end_line: int = 0
+    content_hash: str = ""
 
 
-def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str]]:
+def _split_paragraph(paragraph: str, max_chars: int) -> list[str]:
+    """Split a single paragraph if it exceeds max_chars."""
+    if len(paragraph) <= max_chars:
+        return [paragraph]
+    lines = paragraph.split("\n")
+    result = []
+    current = ""
+    for line in lines:
+        candidate = f"{current}\n{line}".strip() if current else line
+        if current and len(candidate) > max_chars:
+            result.append(current)
+            current = line
+        else:
+            current = candidate
+    if current:
+        result.append(current)
+    return result or [paragraph]
+
+
+def note_chunks(root: Path, max_chars: int = 1_000) -> list[tuple[str, str, int, int]]:
+    """Generate (path, text, start_line, end_line) for each paragraph."""
     if max_chars < 100:
         raise ValueError("max_chars debe ser al menos 100")
 
     root = vault_root(root)
-    chunks: list[tuple[str, str]] = []
+    chunks: list[tuple[str, str, int, int]] = []
     for path in markdown_files(root):
-        paragraphs = [part.strip() for part in path.read_text(encoding="utf-8").split("\n\n") if part.strip()]
-        current = ""
-        for paragraph in paragraphs:
-            candidate = f"{current}\n\n{paragraph}".strip()
-            if current and len(candidate) > max_chars:
-                chunks.append((path.relative_to(root).as_posix(), current))
-                current = paragraph
-            else:
-                current = candidate
-        if current:
-            chunks.append((path.relative_to(root).as_posix(), current))
+        content = path.read_text(encoding="utf-8")
+        lines = content.split("\n")
+
+        # Group lines into paragraphs separated by blank lines
+        paragraphs: list[tuple[int, int, str]] = []
+        current_start = 0
+        current_lines = []
+        for i, line in enumerate(lines):
+            if line.strip():
+                current_lines.append(line)
+            elif current_lines:
+                para_text = "\n".join(current_lines).strip()
+                paragraphs.append((current_start, i, para_text))
+                current_lines = []
+                current_start = i + 1
+        if current_lines:
+            para_text = "\n".join(current_lines).strip()
+            paragraphs.append((current_start, len(lines) - 1, para_text))
+
+        # Chunk paragraphs, splitting long ones
+        current_chunk = ""
+        chunk_start = 0
+        for start_line, end_line, para_text in paragraphs:
+            for sub_para in _split_paragraph(para_text, max_chars):
+                candidate = f"{current_chunk}\n\n{sub_para}".strip() if current_chunk else sub_para
+                if current_chunk and len(candidate) > max_chars:
+                    chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, end_line))
+                    current_chunk = sub_para
+                    chunk_start = start_line
+                else:
+                    current_chunk = candidate
+                    if not chunk_start:
+                        chunk_start = start_line
+
+        if current_chunk:
+            chunks.append((path.relative_to(root).as_posix(), current_chunk, chunk_start, len(lines) - 1))
+
     return chunks
+
+
+def _compute_content_hash(text: str) -> str:
+    """SHA-256 hash of normalized text."""
+    normalized = "\n".join(line.strip() for line in text.split("\n") if line.strip())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def build_index(root: Path, embedder: Embedder, output: Path) -> list[Chunk]:
     source = note_chunks(root)
-    vectors = embedder.encode([text for _, text in source], normalize_embeddings=True)
-    chunks = [Chunk(path, text, list(map(float, vector))) for (path, text), vector in zip(source, vectors, strict=True)]
+    if not source:
+        raise ValueError("No chunks found in vault")
+
+    texts = [text for _, text, _, _ in source]
+    vectors = embedder.encode(texts, normalize_embeddings=True)
+    chunks = [
+        Chunk(
+            path=path,
+            text=text,
+            vector=list(map(float, vector)),
+            start_line=start_line,
+            end_line=end_line,
+            content_hash=_compute_content_hash(text),
+        )
+        for (path, text, start_line, end_line), vector in zip(source, vectors, strict=True)
+    ]
     output.write_text(json.dumps([asdict(chunk) for chunk in chunks], ensure_ascii=False), encoding="utf-8")
     return chunks
 
 
 def load_index(path: Path) -> list[Chunk]:
     data = json.loads(path.read_text(encoding="utf-8"))
-    return [Chunk(path=item["path"], text=item["text"], vector=item["vector"]) for item in data]
+    return [
+        Chunk(
+            path=item["path"],
+            text=item["text"],
+            vector=item["vector"],
+            start_line=item.get("start_line", 0),
+            end_line=item.get("end_line", 0),
+            content_hash=item.get("content_hash", ""),
+        )
+        for item in data
+    ]
 
 
-def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, limit: int = 5) -> list[dict[str, object]]:
+def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vault_root_path: Path | None = None, limit: int = 5) -> list[dict[str, object]]:
     if not query.strip():
         raise ValueError("La consulta no puede estar vacía")
     if limit < 1 or limit > 50:
@@ -64,7 +144,28 @@ def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, lim
         (sum(a * b for a, b in zip(chunk.vector, query_vector, strict=True)), chunk)
         for chunk in chunks
     ]
-    return [
-        {"path": chunk.path, "score": round(float(score), 4), "text": chunk.text[:500]}
-        for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True)[:limit]
-    ]
+
+    results = []
+    for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True):
+        # Validate freshness if vault_root_path provided
+        if vault_root_path:
+            try:
+                note_path = vault_root_path / chunk.path
+                current_content = note_path.read_text(encoding="utf-8")
+                if _compute_content_hash(current_content) != chunk.content_hash:
+                    continue  # Content changed; skip
+            except (OSError, UnicodeError):
+                continue  # File inaccessible; skip
+
+        results.append({
+            "path": chunk.path,
+            "text": chunk.text[:500],
+            "score": round(float(score), 4),
+            "line_start": chunk.start_line,
+            "line_end": chunk.end_line,
+        })
+
+        if len(results) == limit:
+            break
+
+    return results
