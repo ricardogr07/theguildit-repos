@@ -86,13 +86,40 @@ class SemanticTest(TestCase):
             root = Path(temp)
             note = root / "test.md"
             note.write_text("MCP herramientas", encoding="utf-8")
-            
+
             embedder = FakeEmbedder()
             chunks = build_index(root, embedder)
-            
+
             # Edit note in place
             note.write_text("Docker containers", encoding="utf-8")
             results = semantic_search(chunks, "MCP", embedder, vault_root_path=root, limit=5)
-            
+
             # Chunk skipped due to hash mismatch
             self.assertEqual(results, [])
+
+    def test_long_paragraph_splits_within_token_limit(self):
+        """Paragraph exceeding token limit is split into multiple fragments."""
+        try:
+            import sentence_transformers
+        except ImportError:
+            self.skipTest("sentence-transformers not installed")
+
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            # Create a paragraph that exceeds 128 tokens
+            # ~150 words, each word ~1 token, exceeds 128 limit
+            words = ["herramienta"] * 150
+            long_text = " ".join(words)
+            (root / "long.md").write_text(long_text, encoding="utf-8")
+
+            embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+            chunks = build_index(root, embedder)
+
+            # Verify:
+            # 1. Multiple chunks generated (long text split)
+            # 2. Content is fully preserved
+            self.assertTrue(len(chunks) > 1, "Long paragraph should split into multiple chunks")
+
+            # Verify content preservation: all words present
+            all_text = " ".join(chunk.text for chunk in chunks)
+            self.assertEqual(all_text.count("herramienta"), 150, "All words should be preserved after split")

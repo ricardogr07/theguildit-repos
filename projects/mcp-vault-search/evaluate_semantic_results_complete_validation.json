@@ -1,0 +1,802 @@
+[
+  {
+    "query": "¿Cómo puede un asistente usar funciones de otras aplicaciones?",
+    "expected_target": "mcp.md",
+    "designated_distractor": "contenedores.md",
+    "target_position": 6,
+    "distractor_position": 1,
+    "note_rankings": [
+      {
+        "note": "contenedores.md",
+        "rank": 1
+      },
+      {
+        "note": "datos-y-privacidad.md",
+        "rank": 2
+      },
+      {
+        "note": "transporte-stdio.md",
+        "rank": 3
+      },
+      {
+        "note": "herramientas-mcp.md",
+        "rank": 4
+      },
+      {
+        "note": "embeddings.md",
+        "rank": 5
+      },
+      {
+        "note": "mcp.md",
+        "rank": 6
+      },
+      {
+        "note": "bitacora-de-incidente.md",
+        "rank": 7
+      },
+      {
+        "note": "rutas-seguras.md",
+        "rank": 8
+      },
+      {
+        "note": "indice-local.md",
+        "rank": 9
+      },
+      {
+        "note": "fragmentos.md",
+        "rank": 10
+      },
+      {
+        "note": "busqueda.md",
+        "rank": 11
+      },
+      {
+        "note": "busqueda-semantica.md",
+        "rank": 12
+      }
+    ],
+    "full_results": [
+      {
+        "path": "contenedores.md",
+        "text": "Los contenedores facilitan la distribución del servidor a usuarios que no desean instalar código manualmente. La parte 3 de este tutorial explora configuraciones Dockerfile y Docker Compose para diferentes escenarios.",
+        "score": 0.4465,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "# Entornos reproducibles con contenedores\n\nUn contenedor Docker empaques el servidor con sus dependencias, permitiendo ejecutarla en máquinas distintas sin instalar Python ni gestionar ambientes virtuales. El cliente simplemente inicia un contenedor configurado con la ruta del vault.\n\nEl montaje de volúmenes permite que el contenedor lea archivos del host sin copiarlos dentro de la imagen. Montar el vault como un volumen de solo lectura impide que el servidor modifique notas.",
+        "score": 0.331,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "# Datos, privacidad y fragmentos\n\nEl servidor ejecuta el modelo de embeddings en el equipo local, sin enviar notas a internet. El cliente recibe fragmentos de texto, líneas indexadas o contenido completo según la herramienta, y puede decidir qué hacer con ellos.\n\nEl servidor no impide que el cliente envíe fragmentos a su proveedor de IA. Una nota privada almacenada localmente puede procesarse por un servicio remoto si el cliente lo elige. Revisa la política de privacidad de tu cliente antes de u",
+        "score": 0.3201,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "El servidor mantiene una conexión activa durante toda la sesión. Si el proceso termina de manera inesperada, el cliente lo reintenta según su configuración. Los mensajes en tránsito no se persisten; una desconexión inesperada puede perder datos de consultas en vuelo.",
+        "score": 0.3091,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "Los parámetros de entrada son validados por el cliente antes de enviar la llamada. El servidor puede rechazar una llamada con un mensaje de error si los datos de entrada violan las restricciones.",
+        "score": 0.2871,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "El servidor descarga un modelo preentrenado que entiende varios idiomas, incluido español. El mismo modelo resuelve todas las consultas hasta que se reconstruye el índice o se reinicia el servidor.",
+        "score": 0.2798,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "mcp.md",
+        "text": "# Model Context Protocol\n\nMCP permite conectar clientes de IA con herramientas y fuentes de datos mediante un protocolo común.\n\nUn servidor puede exponer herramientas para buscar notas o leer un archivo específico.",
+        "score": 0.2763,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "Para futuras sesiones, se configuró un alerta si la construcción del índice excede cinco segundos. Esta bitácora documenta el procedimiento de diagnóstico que el operador puede repetir si el problema vuelve a ocurrir.",
+        "score": 0.2629,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "# Herramientas en MCP\n\nEl servidor MCP expone herramientas que el cliente puede descubrir y llamar. Cada herramienta tiene un nombre, descripción y parámetros tipados. El cliente enumera las herramientas disponibles sin activarlas; activa solo las que necesita.\n\nEl servidor de búsqueda ofrece `search_notes` para encontrar coincidencias literales y `read_note` para abrir una nota especificando su ruta relativa. Una herramienta adicional `search_semantic` recupera fragmentos por similitud cuando e",
+        "score": 0.26,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "# Transporte por entrada y salida estándar\n\nMCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación ocurre exclusivamente por entrada y salida estándar, usando mensajes JSON codificados con longitud.\n\nEl servidor preserva stdout para mensajes MCP. Los diagnósticos y advertencias se escriben en stderr, permitiendo que herramientas de monitoreo o el operador los inspeccionen sin interferir en la comunicación con el cliente.",
+        "score": 0.2462,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "# Validación de rutas\n\nEl servidor acepta solo rutas relativas con extensión `.md`. Las rutas absolutas y las que apunten fuera del vault son rechazadas. Esto evita que un cliente malintencionado lea archivos del sistema.\n\nLos enlaces simbólicos y puntos de reanálisis de Windows son excluidos, incluso si apuntan a contenido dentro del vault. Esta restricción impide que archivos duplicados o accesos alternativos sean indexados.",
+        "score": 0.237,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "El índice se reconstruye automáticamente cuando se reinicia el servidor. Esta estrategia simple pero efectiva permite trabajar con vaults que cambian entre sesiones sin incurrir en persistencia en disco.",
+        "score": 0.2357,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "# Vectores y embeddings\n\nUn embedding transforma texto en un vector, una lista ordenada de números. Textos con significado parecido tienen vectores cercanos en el espacio matemático. El modelo que crea embeddings debe ser el mismo al crear el índice y al procesar la consulta.\n\nLa normalización convierte un vector al rango de -1 a 1. Dos vectores normalizados pueden compararse rápidamente multiplicando cada componente y sumando los resultados, operación llamada producto punto. Este número entre 0",
+        "score": 0.1871,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "La validación ocurre antes de abrir cualquier archivo. Si la ruta falla la validación, el servidor registra un diagnóstico en stderr y devuelve un error al cliente sin cargar el contenido.",
+        "score": 0.1634,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "# Índice local e instantáneas\n\nEl índice almacena vectores y fragmentos en memoria durante la sesión. No se guarda en disco; cada consulta usa los datos del índice actual. Para incorporar nuevas notas o cambios, el servidor debe reconstruir el índice desde los archivos.\n\nUna instantánea criptográfica de cada nota permite detectar cuándo cambió su contenido. Antes de devolver un fragmento en los resultados, el servidor calcula una huella SHA-256 del contenido actual y la compara con la almacenada",
+        "score": 0.1406,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "Para evitar truncar contenido valioso, el servidor respeta los límites de párrafos. Un párrafo de mil caracteres permanece intacto aunque el fragmento exceda el límite establecido.",
+        "score": 0.1363,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "# División en fragmentos\n\nDividir una nota larga en fragmentos menores mejora la búsqueda semántica. El modelo procesa cada fragmento como una unidad independiente, permitiendo que un párrafo al final de una nota larga aparezca en los resultados sin indexar la nota completa.\n\nUn fragmento puede exceder el límite de caracteres si un párrafo individual es muy largo. El servidor registra la ruta relativa y el rango de líneas de cada fragmento, permitiendo que el cliente abra el fragmento exacto con",
+        "score": 0.1103,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda.md",
+        "text": "# Búsqueda local\n\nEste vault sintético permite probar búsquedas sin exponer notas personales.\n\nLa búsqueda literal encuentra palabras exactas dentro de archivos Markdown.",
+        "score": 0.0876,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "busqueda-semantica.md",
+        "text": "# Búsqueda semántica\n\nLa búsqueda semántica recupera notas que expresan una idea con palabras distintas, no solo coincidencias exactas. Un vector de números representa el significado del texto, y la similitud entre vectores mide qué tan parecidas son dos ideas.\n\nSi buscas \"¿cómo hallo algo que escribí con otra redacción?\", la búsqueda semántica puede encontrar notas sobre fragmentación o archivos aunque no contengan esas palabras exactas. El servidor calcula un puntaje de similitud entre 0 y 1.",
+        "score": 0.0689,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "Los fragmentos devueltos están limitados a 500 caracteres en búsqueda semántica y 20 mil caracteres en lectura de nota completa. Estos límites aplican solo a lo que devuelve el servidor; no garantizan aislamiento de datos en la máquina del cliente.",
+        "score": 0.0652,
+        "line_start": 6,
+        "line_end": 7
+      }
+    ],
+    "literal_matches": [],
+    "pass": false
+  },
+  {
+    "query": "¿Cómo encuentro algo que escribí con otras palabras?",
+    "expected_target": "busqueda-semantica.md",
+    "designated_distractor": "busqueda.md",
+    "target_position": 1,
+    "distractor_position": 2,
+    "note_rankings": [
+      {
+        "note": "busqueda-semantica.md",
+        "rank": 1
+      },
+      {
+        "note": "busqueda.md",
+        "rank": 2
+      },
+      {
+        "note": "fragmentos.md",
+        "rank": 3
+      },
+      {
+        "note": "datos-y-privacidad.md",
+        "rank": 4
+      },
+      {
+        "note": "herramientas-mcp.md",
+        "rank": 5
+      },
+      {
+        "note": "embeddings.md",
+        "rank": 6
+      },
+      {
+        "note": "bitacora-de-incidente.md",
+        "rank": 7
+      },
+      {
+        "note": "indice-local.md",
+        "rank": 8
+      },
+      {
+        "note": "contenedores.md",
+        "rank": 9
+      },
+      {
+        "note": "transporte-stdio.md",
+        "rank": 10
+      },
+      {
+        "note": "mcp.md",
+        "rank": 11
+      },
+      {
+        "note": "rutas-seguras.md",
+        "rank": 12
+      }
+    ],
+    "full_results": [
+      {
+        "path": "busqueda-semantica.md",
+        "text": "# Búsqueda semántica\n\nLa búsqueda semántica recupera notas que expresan una idea con palabras distintas, no solo coincidencias exactas. Un vector de números representa el significado del texto, y la similitud entre vectores mide qué tan parecidas son dos ideas.\n\nSi buscas \"¿cómo hallo algo que escribí con otra redacción?\", la búsqueda semántica puede encontrar notas sobre fragmentación o archivos aunque no contengan esas palabras exactas. El servidor calcula un puntaje de similitud entre 0 y 1.",
+        "score": 0.4542,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda.md",
+        "text": "# Búsqueda local\n\nEste vault sintético permite probar búsquedas sin exponer notas personales.\n\nLa búsqueda literal encuentra palabras exactas dentro de archivos Markdown.",
+        "score": 0.2895,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "# División en fragmentos\n\nDividir una nota larga en fragmentos menores mejora la búsqueda semántica. El modelo procesa cada fragmento como una unidad independiente, permitiendo que un párrafo al final de una nota larga aparezca en los resultados sin indexar la nota completa.\n\nUn fragmento puede exceder el límite de caracteres si un párrafo individual es muy largo. El servidor registra la ruta relativa y el rango de líneas de cada fragmento, permitiendo que el cliente abra el fragmento exacto con",
+        "score": 0.2484,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "Los fragmentos devueltos están limitados a 500 caracteres en búsqueda semántica y 20 mil caracteres en lectura de nota completa. Estos límites aplican solo a lo que devuelve el servidor; no garantizan aislamiento de datos en la máquina del cliente.",
+        "score": 0.2437,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "Para evitar truncar contenido valioso, el servidor respeta los límites de párrafos. Un párrafo de mil caracteres permanece intacto aunque el fragmento exceda el límite establecido.",
+        "score": 0.2106,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "# Herramientas en MCP\n\nEl servidor MCP expone herramientas que el cliente puede descubrir y llamar. Cada herramienta tiene un nombre, descripción y parámetros tipados. El cliente enumera las herramientas disponibles sin activarlas; activa solo las que necesita.\n\nEl servidor de búsqueda ofrece `search_notes` para encontrar coincidencias literales y `read_note` para abrir una nota especificando su ruta relativa. Una herramienta adicional `search_semantic` recupera fragmentos por similitud cuando e",
+        "score": 0.1765,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "# Vectores y embeddings\n\nUn embedding transforma texto en un vector, una lista ordenada de números. Textos con significado parecido tienen vectores cercanos en el espacio matemático. El modelo que crea embeddings debe ser el mismo al crear el índice y al procesar la consulta.\n\nLa normalización convierte un vector al rango de -1 a 1. Dos vectores normalizados pueden compararse rápidamente multiplicando cada componente y sumando los resultados, operación llamada producto punto. Este número entre 0",
+        "score": 0.1619,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda-semantica.md",
+        "text": "Mantener una similitud razonable evita resultados demasiado generales. Un puntaje cercano a 1 indica que el significado del fragmento coincide estrechamente con la consulta. Un puntaje cercano a 0 sugiere que la asociación es débil.",
+        "score": 0.1177,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "# Datos, privacidad y fragmentos\n\nEl servidor ejecuta el modelo de embeddings en el equipo local, sin enviar notas a internet. El cliente recibe fragmentos de texto, líneas indexadas o contenido completo según la herramienta, y puede decidir qué hacer con ellos.\n\nEl servidor no impide que el cliente envíe fragmentos a su proveedor de IA. Una nota privada almacenada localmente puede procesarse por un servicio remoto si el cliente lo elige. Revisa la política de privacidad de tu cliente antes de u",
+        "score": 0.1043,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "El servidor descarga un modelo preentrenado que entiende varios idiomas, incluido español. El mismo modelo resuelve todas las consultas hasta que se reconstruye el índice o se reinicia el servidor.",
+        "score": 0.0724,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "# Ejemplo: bitácora de incidente\n\nSe reportó un aumento en la latencia de búsqueda desde las 14:30. El servidor comenzó a responder lentamente tras recibir tres mil consultas consecutivas. Se recompilaron los índices y los tiempos regresaron a lo normal después del reinicio.\n\nEl patrón sugiere que el índice en memoria creció más allá de lo esperado. Se verificó que el vault contenía notas nuevas que no habían sido reindexadas. Tras borrar datos obsoletos y reconstruir el índice, el rendimiento s",
+        "score": 0.0708,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "# Índice local e instantáneas\n\nEl índice almacena vectores y fragmentos en memoria durante la sesión. No se guarda en disco; cada consulta usa los datos del índice actual. Para incorporar nuevas notas o cambios, el servidor debe reconstruir el índice desde los archivos.\n\nUna instantánea criptográfica de cada nota permite detectar cuándo cambió su contenido. Antes de devolver un fragmento en los resultados, el servidor calcula una huella SHA-256 del contenido actual y la compara con la almacenada",
+        "score": 0.0638,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "Los contenedores facilitan la distribución del servidor a usuarios que no desean instalar código manualmente. La parte 3 de este tutorial explora configuraciones Dockerfile y Docker Compose para diferentes escenarios.",
+        "score": 0.0411,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "Para futuras sesiones, se configuró un alerta si la construcción del índice excede cinco segundos. Esta bitácora documenta el procedimiento de diagnóstico que el operador puede repetir si el problema vuelve a ocurrir.",
+        "score": 0.0323,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "# Transporte por entrada y salida estándar\n\nMCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación ocurre exclusivamente por entrada y salida estándar, usando mensajes JSON codificados con longitud.\n\nEl servidor preserva stdout para mensajes MCP. Los diagnósticos y advertencias se escriben en stderr, permitiendo que herramientas de monitoreo o el operador los inspeccionen sin interferir en la comunicación con el cliente.",
+        "score": 0.0182,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "mcp.md",
+        "text": "# Model Context Protocol\n\nMCP permite conectar clientes de IA con herramientas y fuentes de datos mediante un protocolo común.\n\nUn servidor puede exponer herramientas para buscar notas o leer un archivo específico.",
+        "score": 0.0057,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "La validación ocurre antes de abrir cualquier archivo. Si la ruta falla la validación, el servidor registra un diagnóstico en stderr y devuelve un error al cliente sin cargar el contenido.",
+        "score": -0.0659,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "# Entornos reproducibles con contenedores\n\nUn contenedor Docker empaques el servidor con sus dependencias, permitiendo ejecutarla en máquinas distintas sin instalar Python ni gestionar ambientes virtuales. El cliente simplemente inicia un contenedor configurado con la ruta del vault.\n\nEl montaje de volúmenes permite que el contenedor lea archivos del host sin copiarlos dentro de la imagen. Montar el vault como un volumen de solo lectura impide que el servidor modifique notas.",
+        "score": -0.0736,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "El servidor mantiene una conexión activa durante toda la sesión. Si el proceso termina de manera inesperada, el cliente lo reintenta según su configuración. Los mensajes en tránsito no se persisten; una desconexión inesperada puede perder datos de consultas en vuelo.",
+        "score": -0.0782,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "El índice se reconstruye automáticamente cuando se reinicia el servidor. Esta estrategia simple pero efectiva permite trabajar con vaults que cambian entre sesiones sin incurrir en persistencia en disco.",
+        "score": -0.0849,
+        "line_start": 6,
+        "line_end": 7
+      }
+    ],
+    "literal_matches": [],
+    "pass": true
+  },
+  {
+    "query": "¿Cómo evito que se pierda la parte final de un apunte muy extenso al procesarlo?",
+    "expected_target": "fragmentos.md",
+    "designated_distractor": "bitacora-de-incidente.md",
+    "target_position": 1,
+    "distractor_position": 2,
+    "note_rankings": [
+      {
+        "note": "fragmentos.md",
+        "rank": 1
+      },
+      {
+        "note": "bitacora-de-incidente.md",
+        "rank": 2
+      },
+      {
+        "note": "contenedores.md",
+        "rank": 3
+      },
+      {
+        "note": "indice-local.md",
+        "rank": 4
+      },
+      {
+        "note": "busqueda-semantica.md",
+        "rank": 5
+      },
+      {
+        "note": "datos-y-privacidad.md",
+        "rank": 6
+      },
+      {
+        "note": "transporte-stdio.md",
+        "rank": 7
+      },
+      {
+        "note": "busqueda.md",
+        "rank": 8
+      },
+      {
+        "note": "rutas-seguras.md",
+        "rank": 9
+      },
+      {
+        "note": "embeddings.md",
+        "rank": 10
+      },
+      {
+        "note": "herramientas-mcp.md",
+        "rank": 11
+      }
+    ],
+    "full_results": [
+      {
+        "path": "fragmentos.md",
+        "text": "Para evitar truncar contenido valioso, el servidor respeta los límites de párrafos. Un párrafo de mil caracteres permanece intacto aunque el fragmento exceda el límite establecido.",
+        "score": 0.4697,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "# División en fragmentos\n\nDividir una nota larga en fragmentos menores mejora la búsqueda semántica. El modelo procesa cada fragmento como una unidad independiente, permitiendo que un párrafo al final de una nota larga aparezca en los resultados sin indexar la nota completa.\n\nUn fragmento puede exceder el límite de caracteres si un párrafo individual es muy largo. El servidor registra la ruta relativa y el rango de líneas de cada fragmento, permitiendo que el cliente abra el fragmento exacto con",
+        "score": 0.4313,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "# Ejemplo: bitácora de incidente\n\nSe reportó un aumento en la latencia de búsqueda desde las 14:30. El servidor comenzó a responder lentamente tras recibir tres mil consultas consecutivas. Se recompilaron los índices y los tiempos regresaron a lo normal después del reinicio.\n\nEl patrón sugiere que el índice en memoria creció más allá de lo esperado. Se verificó que el vault contenía notas nuevas que no habían sido reindexadas. Tras borrar datos obsoletos y reconstruir el índice, el rendimiento s",
+        "score": 0.378,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "Para futuras sesiones, se configuró un alerta si la construcción del índice excede cinco segundos. Esta bitácora documenta el procedimiento de diagnóstico que el operador puede repetir si el problema vuelve a ocurrir.",
+        "score": 0.374,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "# Entornos reproducibles con contenedores\n\nUn contenedor Docker empaques el servidor con sus dependencias, permitiendo ejecutarla en máquinas distintas sin instalar Python ni gestionar ambientes virtuales. El cliente simplemente inicia un contenedor configurado con la ruta del vault.\n\nEl montaje de volúmenes permite que el contenedor lea archivos del host sin copiarlos dentro de la imagen. Montar el vault como un volumen de solo lectura impide que el servidor modifique notas.",
+        "score": 0.3472,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "# Índice local e instantáneas\n\nEl índice almacena vectores y fragmentos en memoria durante la sesión. No se guarda en disco; cada consulta usa los datos del índice actual. Para incorporar nuevas notas o cambios, el servidor debe reconstruir el índice desde los archivos.\n\nUna instantánea criptográfica de cada nota permite detectar cuándo cambió su contenido. Antes de devolver un fragmento en los resultados, el servidor calcula una huella SHA-256 del contenido actual y la compara con la almacenada",
+        "score": 0.3467,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda-semantica.md",
+        "text": "Mantener una similitud razonable evita resultados demasiado generales. Un puntaje cercano a 1 indica que el significado del fragmento coincide estrechamente con la consulta. Un puntaje cercano a 0 sugiere que la asociación es débil.",
+        "score": 0.3221,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "El índice se reconstruye automáticamente cuando se reinicia el servidor. Esta estrategia simple pero efectiva permite trabajar con vaults que cambian entre sesiones sin incurrir en persistencia en disco.",
+        "score": 0.3184,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "Los fragmentos devueltos están limitados a 500 caracteres en búsqueda semántica y 20 mil caracteres en lectura de nota completa. Estos límites aplican solo a lo que devuelve el servidor; no garantizan aislamiento de datos en la máquina del cliente.",
+        "score": 0.3129,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "El servidor mantiene una conexión activa durante toda la sesión. Si el proceso termina de manera inesperada, el cliente lo reintenta según su configuración. Los mensajes en tránsito no se persisten; una desconexión inesperada puede perder datos de consultas en vuelo.",
+        "score": 0.2707,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "Los contenedores facilitan la distribución del servidor a usuarios que no desean instalar código manualmente. La parte 3 de este tutorial explora configuraciones Dockerfile y Docker Compose para diferentes escenarios.",
+        "score": 0.2321,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "# Datos, privacidad y fragmentos\n\nEl servidor ejecuta el modelo de embeddings en el equipo local, sin enviar notas a internet. El cliente recibe fragmentos de texto, líneas indexadas o contenido completo según la herramienta, y puede decidir qué hacer con ellos.\n\nEl servidor no impide que el cliente envíe fragmentos a su proveedor de IA. Una nota privada almacenada localmente puede procesarse por un servicio remoto si el cliente lo elige. Revisa la política de privacidad de tu cliente antes de u",
+        "score": 0.2255,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "# Transporte por entrada y salida estándar\n\nMCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación ocurre exclusivamente por entrada y salida estándar, usando mensajes JSON codificados con longitud.\n\nEl servidor preserva stdout para mensajes MCP. Los diagnósticos y advertencias se escriben en stderr, permitiendo que herramientas de monitoreo o el operador los inspeccionen sin interferir en la comunicación con el cliente.",
+        "score": 0.2233,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda.md",
+        "text": "# Búsqueda local\n\nEste vault sintético permite probar búsquedas sin exponer notas personales.\n\nLa búsqueda literal encuentra palabras exactas dentro de archivos Markdown.",
+        "score": 0.2134,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "La validación ocurre antes de abrir cualquier archivo. Si la ruta falla la validación, el servidor registra un diagnóstico en stderr y devuelve un error al cliente sin cargar el contenido.",
+        "score": 0.2036,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "# Vectores y embeddings\n\nUn embedding transforma texto en un vector, una lista ordenada de números. Textos con significado parecido tienen vectores cercanos en el espacio matemático. El modelo que crea embeddings debe ser el mismo al crear el índice y al procesar la consulta.\n\nLa normalización convierte un vector al rango de -1 a 1. Dos vectores normalizados pueden compararse rápidamente multiplicando cada componente y sumando los resultados, operación llamada producto punto. Este número entre 0",
+        "score": 0.1612,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "# Herramientas en MCP\n\nEl servidor MCP expone herramientas que el cliente puede descubrir y llamar. Cada herramienta tiene un nombre, descripción y parámetros tipados. El cliente enumera las herramientas disponibles sin activarlas; activa solo las que necesita.\n\nEl servidor de búsqueda ofrece `search_notes` para encontrar coincidencias literales y `read_note` para abrir una nota especificando su ruta relativa. Una herramienta adicional `search_semantic` recupera fragmentos por similitud cuando e",
+        "score": 0.1382,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "# Validación de rutas\n\nEl servidor acepta solo rutas relativas con extensión `.md`. Las rutas absolutas y las que apunten fuera del vault son rechazadas. Esto evita que un cliente malintencionado lea archivos del sistema.\n\nLos enlaces simbólicos y puntos de reanálisis de Windows son excluidos, incluso si apuntan a contenido dentro del vault. Esta restricción impide que archivos duplicados o accesos alternativos sean indexados.",
+        "score": 0.1327,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "El servidor descarga un modelo preentrenado que entiende varios idiomas, incluido español. El mismo modelo resuelve todas las consultas hasta que se reconstruye el índice o se reinicia el servidor.",
+        "score": 0.1263,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "Los parámetros de entrada son validados por el cliente antes de enviar la llamada. El servidor puede rechazar una llamada con un mensaje de error si los datos de entrada violan las restricciones.",
+        "score": 0.1246,
+        "line_start": 6,
+        "line_end": 7
+      }
+    ],
+    "literal_matches": [],
+    "pass": true
+  },
+  {
+    "query": "¿Cómo evito que el asistente abra documentos fuera de la carpeta que le compartí?",
+    "expected_target": "rutas-seguras.md",
+    "designated_distractor": "datos-y-privacidad.md",
+    "target_position": 4,
+    "distractor_position": 3,
+    "note_rankings": [
+      {
+        "note": "contenedores.md",
+        "rank": 1
+      },
+      {
+        "note": "fragmentos.md",
+        "rank": 2
+      },
+      {
+        "note": "datos-y-privacidad.md",
+        "rank": 3
+      },
+      {
+        "note": "rutas-seguras.md",
+        "rank": 4
+      },
+      {
+        "note": "indice-local.md",
+        "rank": 5
+      },
+      {
+        "note": "transporte-stdio.md",
+        "rank": 6
+      },
+      {
+        "note": "busqueda.md",
+        "rank": 7
+      },
+      {
+        "note": "herramientas-mcp.md",
+        "rank": 8
+      },
+      {
+        "note": "bitacora-de-incidente.md",
+        "rank": 9
+      },
+      {
+        "note": "embeddings.md",
+        "rank": 10
+      },
+      {
+        "note": "busqueda-semantica.md",
+        "rank": 11
+      },
+      {
+        "note": "mcp.md",
+        "rank": 12
+      }
+    ],
+    "full_results": [
+      {
+        "path": "contenedores.md",
+        "text": "# Entornos reproducibles con contenedores\n\nUn contenedor Docker empaques el servidor con sus dependencias, permitiendo ejecutarla en máquinas distintas sin instalar Python ni gestionar ambientes virtuales. El cliente simplemente inicia un contenedor configurado con la ruta del vault.\n\nEl montaje de volúmenes permite que el contenedor lea archivos del host sin copiarlos dentro de la imagen. Montar el vault como un volumen de solo lectura impide que el servidor modifique notas.",
+        "score": 0.327,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "Para evitar truncar contenido valioso, el servidor respeta los límites de párrafos. Un párrafo de mil caracteres permanece intacto aunque el fragmento exceda el límite establecido.",
+        "score": 0.3034,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "# Datos, privacidad y fragmentos\n\nEl servidor ejecuta el modelo de embeddings en el equipo local, sin enviar notas a internet. El cliente recibe fragmentos de texto, líneas indexadas o contenido completo según la herramienta, y puede decidir qué hacer con ellos.\n\nEl servidor no impide que el cliente envíe fragmentos a su proveedor de IA. Una nota privada almacenada localmente puede procesarse por un servicio remoto si el cliente lo elige. Revisa la política de privacidad de tu cliente antes de u",
+        "score": 0.2985,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "datos-y-privacidad.md",
+        "text": "Los fragmentos devueltos están limitados a 500 caracteres en búsqueda semántica y 20 mil caracteres en lectura de nota completa. Estos límites aplican solo a lo que devuelve el servidor; no garantizan aislamiento de datos en la máquina del cliente.",
+        "score": 0.2402,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "# Validación de rutas\n\nEl servidor acepta solo rutas relativas con extensión `.md`. Las rutas absolutas y las que apunten fuera del vault son rechazadas. Esto evita que un cliente malintencionado lea archivos del sistema.\n\nLos enlaces simbólicos y puntos de reanálisis de Windows son excluidos, incluso si apuntan a contenido dentro del vault. Esta restricción impide que archivos duplicados o accesos alternativos sean indexados.",
+        "score": 0.2395,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "# Índice local e instantáneas\n\nEl índice almacena vectores y fragmentos en memoria durante la sesión. No se guarda en disco; cada consulta usa los datos del índice actual. Para incorporar nuevas notas o cambios, el servidor debe reconstruir el índice desde los archivos.\n\nUna instantánea criptográfica de cada nota permite detectar cuándo cambió su contenido. Antes de devolver un fragmento en los resultados, el servidor calcula una huella SHA-256 del contenido actual y la compara con la almacenada",
+        "score": 0.2144,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "contenedores.md",
+        "text": "Los contenedores facilitan la distribución del servidor a usuarios que no desean instalar código manualmente. La parte 3 de este tutorial explora configuraciones Dockerfile y Docker Compose para diferentes escenarios.",
+        "score": 0.2045,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "El servidor mantiene una conexión activa durante toda la sesión. Si el proceso termina de manera inesperada, el cliente lo reintenta según su configuración. Los mensajes en tránsito no se persisten; una desconexión inesperada puede perder datos de consultas en vuelo.",
+        "score": 0.165,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "transporte-stdio.md",
+        "text": "# Transporte por entrada y salida estándar\n\nMCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación ocurre exclusivamente por entrada y salida estándar, usando mensajes JSON codificados con longitud.\n\nEl servidor preserva stdout para mensajes MCP. Los diagnósticos y advertencias se escriben en stderr, permitiendo que herramientas de monitoreo o el operador los inspeccionen sin interferir en la comunicación con el cliente.",
+        "score": 0.1618,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "rutas-seguras.md",
+        "text": "La validación ocurre antes de abrir cualquier archivo. Si la ruta falla la validación, el servidor registra un diagnóstico en stderr y devuelve un error al cliente sin cargar el contenido.",
+        "score": 0.1577,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda.md",
+        "text": "# Búsqueda local\n\nEste vault sintético permite probar búsquedas sin exponer notas personales.\n\nLa búsqueda literal encuentra palabras exactas dentro de archivos Markdown.",
+        "score": 0.1569,
+        "line_start": 2,
+        "line_end": 5
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "Los parámetros de entrada son validados por el cliente antes de enviar la llamada. El servidor puede rechazar una llamada con un mensaje de error si los datos de entrada violan las restricciones.",
+        "score": 0.1366,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "Para futuras sesiones, se configuró un alerta si la construcción del índice excede cinco segundos. Esta bitácora documenta el procedimiento de diagnóstico que el operador puede repetir si el problema vuelve a ocurrir.",
+        "score": 0.1328,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "bitacora-de-incidente.md",
+        "text": "# Ejemplo: bitácora de incidente\n\nSe reportó un aumento en la latencia de búsqueda desde las 14:30. El servidor comenzó a responder lentamente tras recibir tres mil consultas consecutivas. Se recompilaron los índices y los tiempos regresaron a lo normal después del reinicio.\n\nEl patrón sugiere que el índice en memoria creció más allá de lo esperado. Se verificó que el vault contenía notas nuevas que no habían sido reindexadas. Tras borrar datos obsoletos y reconstruir el índice, el rendimiento s",
+        "score": 0.1081,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "embeddings.md",
+        "text": "El servidor descarga un modelo preentrenado que entiende varios idiomas, incluido español. El mismo modelo resuelve todas las consultas hasta que se reconstruye el índice o se reinicia el servidor.",
+        "score": 0.104,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "indice-local.md",
+        "text": "El índice se reconstruye automáticamente cuando se reinicia el servidor. Esta estrategia simple pero efectiva permite trabajar con vaults que cambian entre sesiones sin incurrir en persistencia en disco.",
+        "score": 0.0815,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "busqueda-semantica.md",
+        "text": "Mantener una similitud razonable evita resultados demasiado generales. Un puntaje cercano a 1 indica que el significado del fragmento coincide estrechamente con la consulta. Un puntaje cercano a 0 sugiere que la asociación es débil.",
+        "score": 0.0741,
+        "line_start": 6,
+        "line_end": 7
+      },
+      {
+        "path": "herramientas-mcp.md",
+        "text": "# Herramientas en MCP\n\nEl servidor MCP expone herramientas que el cliente puede descubrir y llamar. Cada herramienta tiene un nombre, descripción y parámetros tipados. El cliente enumera las herramientas disponibles sin activarlas; activa solo las que necesita.\n\nEl servidor de búsqueda ofrece `search_notes` para encontrar coincidencias literales y `read_note` para abrir una nota especificando su ruta relativa. Una herramienta adicional `search_semantic` recupera fragmentos por similitud cuando e",
+        "score": 0.0668,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "fragmentos.md",
+        "text": "# División en fragmentos\n\nDividir una nota larga en fragmentos menores mejora la búsqueda semántica. El modelo procesa cada fragmento como una unidad independiente, permitiendo que un párrafo al final de una nota larga aparezca en los resultados sin indexar la nota completa.\n\nUn fragmento puede exceder el límite de caracteres si un párrafo individual es muy largo. El servidor registra la ruta relativa y el rango de líneas de cada fragmento, permitiendo que el cliente abra el fragmento exacto con",
+        "score": 0.0354,
+        "line_start": 2,
+        "line_end": 7
+      },
+      {
+        "path": "mcp.md",
+        "text": "# Model Context Protocol\n\nMCP permite conectar clientes de IA con herramientas y fuentes de datos mediante un protocolo común.\n\nUn servidor puede exponer herramientas para buscar notas o leer un archivo específico.",
+        "score": 0.025,
+        "line_start": 2,
+        "line_end": 5
+      }
+    ],
+    "literal_matches": [],
+    "pass": false
+  }
+]

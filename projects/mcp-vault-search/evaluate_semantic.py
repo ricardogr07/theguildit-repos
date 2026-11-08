@@ -41,20 +41,21 @@ def main():
         print(f"Expected target: {expected_target}")
         print(f"Designated distractor: {distractor}")
 
-        # Semantic search with access validation
-        semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=5)
+        # Semantic search with access validation; request more fragments to ensure enough unique notes
+        semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=20)
 
-        # Group results by note (first occurrence per note)
+        # Deduplicate by note path, preserving order; assign consecutive rank 1, 2, 3, ...
         seen_notes = {}
         note_rankings = []
-        for j, r in enumerate(semantic_results, 1):
+        for r in semantic_results:
             if r['path'] not in seen_notes:
-                seen_notes[r['path']] = j
-                note_rankings.append((r['path'], j))
+                note_rank = len(note_rankings) + 1
+                seen_notes[r['path']] = note_rank
+                note_rankings.append((r['path'], note_rank))
 
-        print(f"Note rankings (by fragment rank):")
-        for note_path, frag_rank in note_rankings[:3]:
-            print(f"  {len(note_rankings[:note_rankings.index((note_path, frag_rank))])+1}. {note_path} (first fragment rank: {frag_rank})")
+        print(f"Note rankings (unique notes, by first occurrence):")
+        for note_path, note_rank in note_rankings[:5]:
+            print(f"  {note_rank}. {note_path}")
 
         # Literal search for comparison
         from mcp_vault_search.vault import search_notes
