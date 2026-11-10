@@ -9,7 +9,7 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
-from mcp_vault_search.semantic import build_index, semantic_search, Chunk
+from mcp_vault_search.semantic import MODEL_NAME, MODEL_REVISION, Chunk, build_index, semantic_search
 from mcp_vault_search.vault import read_note as read_note_file
 from mcp_vault_search.vault import search_notes as search_vault
 from mcp_vault_search.vault import vault_root
@@ -20,7 +20,7 @@ mcp = MCPServer("mcp-vault-search")
 # Lazy-loaded semantic index and embedder (cached across queries)
 _semantic_index: list[Chunk] | None = None
 _embedder = None
-_semantic_enabled = bool(os.environ.get("VAULT_SEMANTIC"))
+_semantic_enabled = os.environ.get("VAULT_SEMANTIC") == "1"
 
 
 def configured_root() -> Path:
@@ -38,7 +38,7 @@ def _get_embedder():
     except ImportError:
         raise ToolError("sentence-transformers not installed; install with --extra semantic")
 
-    _embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    _embedder = sentence_transformers.SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
     return _embedder
 
 

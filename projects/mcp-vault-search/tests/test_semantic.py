@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
+from unittest.mock import patch
 
 from mcp_vault_search.semantic import build_index, note_chunks, semantic_search
 
@@ -10,6 +11,16 @@ class FakeEmbedder:
     def encode(self, texts, *, normalize_embeddings):
         self.normalized = normalize_embeddings
         return [[1.0, 0.0] if "MCP" in text or "agentes" in text else [0.0, 1.0] for text in texts]
+
+
+class WordTokenizer:
+    def encode(self, text):
+        return ["[CLS]", *text.split(), "[SEP]"]
+
+
+class TokenAwareEmbedder(FakeEmbedder):
+    tokenizer = WordTokenizer()
+    max_seq_length = 128
 
 
 class SemanticTest(TestCase):
@@ -62,7 +73,18 @@ class SemanticTest(TestCase):
             self.assertEqual(results[0]["score"], 1.0)
 
     def test_semantic_search_skips_stale_chunks(self):
-        """When vault content changes, chunks are skipped until reindex."""
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            note = root / "a.md"
+            note.write_text("MCP " * 300, encoding="utf-8")
+            embedder = FakeEmbedder()
+            chunks = build_index(root, embedder)
+            self.assertGreater(len(chunks), 1)
+            note.write_text(" " + note.read_text(encoding="utf-8"), encoding="utf-8")
+            self.assertEqual(semantic_search(chunks, "MCP", embedder, root), [])
+            note.unlink()
+            self.assertEqual(semantic_search(chunks, "MCP", embedder, root), [])
+
     def test_semantic_search_skips_removed_note(self):
         """When note is removed, its chunks are skipped on search."""
         with TemporaryDirectory() as temp:
@@ -99,11 +121,6 @@ class SemanticTest(TestCase):
 
     def test_long_paragraph_splits_within_token_limit(self):
         """Paragraph exceeding token limit is split into multiple fragments."""
-        try:
-            import sentence_transformers
-        except ImportError:
-            self.skipTest("sentence-transformers not installed")
-
         with TemporaryDirectory() as temp:
             root = Path(temp)
             # Create a paragraph that exceeds 128 tokens
@@ -112,7 +129,7 @@ class SemanticTest(TestCase):
             long_text = " ".join(words)
             (root / "long.md").write_text(long_text, encoding="utf-8")
 
-            embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+            embedder = TokenAwareEmbedder()
             chunks = build_index(root, embedder)
 
             # Verify:
@@ -123,3 +140,74 @@ class SemanticTest(TestCase):
             # Verify content preservation: all words present
             all_text = " ".join(chunk.text for chunk in chunks)
             self.assertEqual(all_text.count("herramienta"), 150, "All words should be preserved after split")
+            self.assertEqual(all_text.split(), words)
+            self.assertTrue(all(len(embedder.tokenizer.encode(chunk.text)) <= 128 for chunk in chunks))
+
+    def test_chunks_preserve_source_text_and_one_based_line_ranges(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            note = root / "a.md"
+            for newline in ("\n", "\r\n"):
+                with self.subTest(newline=newline):
+                    content = newline.join(("", "", "# Title", "", "a" * 80, "", "b" * 80, ""))
+                    note.write_bytes(content.encode("utf-8"))
+                    chunks = note_chunks(root, max_chars=100)
+                    self.assertEqual([(start, end) for _, _, start, end, _ in chunks], [(3, 5), (7, 7)])
+                    lines = content.splitlines(keepends=True)
+                    for _, text, start, end, _ in chunks:
+                        self.assertEqual(text, "".join(lines[start - 1:end]))
+
+    def test_token_splits_retain_multiline_positions_and_indentation(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            content = "alpha beta\n    gamma delta\n    epsilon zeta\n"
+            (root / "a.md").write_bytes(content.encode("utf-8"))
+            chunks = note_chunks(root, tokenizer=WordTokenizer(), max_seq_length=6)
+            self.assertEqual([(start, end) for _, _, start, end, _ in chunks], [(1, 2), (3, 3)])
+            self.assertEqual("".join(text for _, text, _, _, _ in chunks), content)
+
+    def test_whitespace_and_line_ending_edits_invalidate_index(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            note = root / "a.md"
+            original = "if allowed:\n    run()\n"
+            for changed in ("if allowed:\nrun()\n", "\n" + original, original.replace("\n", "\r\n")):
+                with self.subTest(changed=changed):
+                    note.write_bytes(original.encode("utf-8"))
+                    index = build_index(root, FakeEmbedder())
+                    note.write_bytes(changed.encode("utf-8"))
+                    self.assertEqual(semantic_search(index, "MCP", FakeEmbedder(), root), [])
+
+    def test_long_indented_word_keeps_making_progress_with_token_splits(self):
+        class CharacterTokenizer:
+            def encode(self, text):
+                return [0] * (len(text.replace(" ", "")) + 2)
+
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            original = "    " + "x" * 20
+            (root / "a.md").write_bytes(original.encode("utf-8"))
+            tokenizer = CharacterTokenizer()
+            chunks = note_chunks(root, tokenizer=tokenizer, max_seq_length=8)
+            self.assertEqual("".join(text for _, text, _, _, _ in chunks), original)
+            self.assertTrue(all(len(tokenizer.encode(text)) <= 8 for _, text, _, _, _ in chunks))
+
+    def test_index_skips_unreadable_and_invalid_utf8_notes_with_diagnostics(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bad.md").write_bytes(b"\xff")
+            (root / "denied.md").write_text("inaccessible", encoding="utf-8")
+            (root / "good.md").write_text("MCP", encoding="utf-8")
+            read_bytes = Path.read_bytes
+
+            def read_accessible(path):
+                if path.name == "denied.md":
+                    raise PermissionError("No permission")
+                return read_bytes(path)
+
+            with patch.object(Path, "read_bytes", read_accessible):
+                with self.assertLogs("mcp_vault_search.semantic", level="WARNING") as logs:
+                    index = build_index(root, FakeEmbedder())
+            self.assertEqual([chunk.path for chunk in index], ["good.md"])
+            self.assertIn("bad.md", " ".join(logs.output))
+            self.assertIn("denied.md", " ".join(logs.output))
