@@ -6,7 +6,7 @@ Proyecto compañero de una serie de tutoriales en español para The Guild IT.
 
 ## Estado
 
-Parte 1: búsqueda literal y lectura con validación de rutas. Las utilidades semánticas y el Dockerfile son preliminares; no hay una herramienta MCP semántica ni checkpoints publicados de las partes 2 y 3.
+La parte 1 ofrece búsqueda literal y lectura con validación de rutas. La parte 2 incorpora `search_semantic` opcional y está en validación para el tutorial. El notebook y el checkpoint público de esa parte siguen pendientes. El Dockerfile es preliminar.
 
 ## Requisitos
 
@@ -53,6 +53,29 @@ Herramientas:
 
 - `search_notes(query, limit)`: busca texto literal y devuelve ruta, línea y fragmento.
 - `read_note(path)`: lee un archivo Markdown usando una ruta relativa al vault.
+
+## Búsqueda semántica opcional
+
+```powershell
+uv sync --locked --extra semantic
+$env:VAULT_PATH = (Resolve-Path examples/vault).Path
+$env:VAULT_SEMANTIC = "1"
+uv run --locked --extra semantic mcp-vault-search
+```
+
+La herramienta `search_semantic(query, limit=5)` devuelve fragmentos, puntajes y rangos inclusivos de líneas numeradas desde 1. `limit` acepta de 1 a 50 fragmentos. Varios fragmentos pueden proceder de la misma nota.
+
+La primera consulta carga en CPU `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, revisión `e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, y construye el índice en memoria. Cada fragmento respeta los límites de caracteres y de tokens del modelo, incluidos los tokens especiales. La descarga inicial necesita acceso al modelo. Las consultas posteriores reutilizan el modelo y el índice del proceso.
+
+Antes de devolver resultados se comprueba cada nota candidata una vez por consulta. Si cambió cualquier parte de su contenido, incluida la indentación o los finales de línea, sus fragmentos se omiten. Las notas retiradas, ilegibles o sustituidas por enlaces también se omiten. Reinicia el proceso para indexar ediciones y notas nuevas. Durante la indexación, las notas ilegibles se omiten con diagnóstico en stderr. El servidor conserva los límites de acceso documentados abajo.
+
+La suite usa un modelo simulado y una prueba del proceso MCP para comprobar las ediciones y los borrados durante la misma sesión. La evaluación de recuperación con el modelo real se ejecuta por separado.
+
+```powershell
+uv run --locked --extra semantic python evaluate_semantic.py --output evaluate_semantic_results_checkpoint_fixes.json
+```
+
+La corrida histórica de `f6fd8e2` logró 2/4 con los objetivos y distractores originales. El reporte nuevo conserva esas consultas y registra versiones y huellas para comparar las correcciones. [Análisis de relevancia](CORPUS_ANALYSIS.md).
 
 ## Claude Desktop
 
@@ -113,7 +136,7 @@ Las notas son datos, no instrucciones confiables para el agente. La validación 
 
 ## Pendientes de la parte 2
 
-La prueba con `FakeEmbedder` comprueba ranking y serialización, no calidad semántica real. Antes de publicar la parte 2 faltan corte estricto de párrafos largos, posiciones de chunks, política para archivos ilegibles en indexación, evaluación con el modelo real e integración como herramienta MCP. El notebook no se presenta como un servidor MCP remoto.
+Después de revisar el checkpoint corregido con Ricardo, faltan fijar el commit para Colab, comprobar el acceso público y ejecutar el notebook completo en un entorno limpio. La redacción editorial utilizará los resultados observados y pasará por las aprobaciones de esquema, texto y paquete.
 
 ## Cuándo no usarlo
 

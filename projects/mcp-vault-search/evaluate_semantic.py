@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 """Evaluate semantic search with real model against 12-note corpus."""
 
+import argparse
+import hashlib
 import json
+import platform
+from importlib.metadata import version
 from pathlib import Path
 
-from mcp_vault_search.semantic import build_index, semantic_search
-from mcp_vault_search.vault import vault_root
+from mcp_vault_search.semantic import MODEL_NAME, MODEL_REVISION, build_index, semantic_search
+from mcp_vault_search.vault import markdown_files, vault_root
 
 # Queries with expected targets and designated distractors (per plan line 74)
 # PASS: target in top 3 AND (no distractor in top 3 OR target ranks better than distractor)
@@ -17,6 +21,9 @@ QUERIES = [
 ]
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=Path("evaluate_semantic_results.json"))
+    arguments = parser.parse_args()
     try:
         import sentence_transformers
     except ImportError:
@@ -24,12 +31,32 @@ def main():
         return
 
     root = vault_root("examples/vault")
-    embedder = sentence_transformers.SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    embedder = sentence_transformers.SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
     print("Building index...")
     chunks = build_index(root, embedder)
     print(f"Index built: {len(chunks)} chunks from vault")
     print()
+
+    token_counts = [len(embedder.tokenizer.encode(chunk.text)) for chunk in chunks]
+    if max(token_counts) > embedder.max_seq_length:
+        raise ValueError("Un fragmento excede el límite de tokens del modelo")
+    metadata = {
+        "model_name": MODEL_NAME,
+        "model_revision": MODEL_REVISION,
+        "python_version": platform.python_version(),
+        "package_versions": {name: version(name) for name in ("sentence-transformers", "transformers", "torch")},
+        "corpus_sha256": {
+            path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in markdown_files(root)
+        },
+        "code_sha256": {
+            path.resolve().relative_to(Path.cwd()).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (Path("src/mcp_vault_search/semantic.py"), Path("src/mcp_vault_search/server.py"), Path(__file__).resolve())
+        },
+        "max_chunk_tokens": max(token_counts),
+        "model_token_limit": embedder.max_seq_length,
+    }
 
     results = []
     for i, q_spec in enumerate(QUERIES, 1):
@@ -42,7 +69,7 @@ def main():
         print(f"Designated distractor: {distractor}")
 
         # Semantic search with access validation; request more fragments to ensure enough unique notes
-        semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=20)
+        semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=50)
 
         # Deduplicate by note path, preserving order; assign consecutive rank 1, 2, 3, ...
         seen_notes = {}
@@ -82,6 +109,7 @@ def main():
         print()
 
         results.append({
+            "evaluation_metadata": metadata,
             "query": query,
             "expected_target": expected_target,
             "designated_distractor": distractor,
@@ -106,7 +134,7 @@ def main():
             print()
 
     # Write full results
-    output_file = Path("evaluate_semantic_results.json")
+    output_file = arguments.output
     output_file.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print()
     print(f"Full results written to {output_file}")
