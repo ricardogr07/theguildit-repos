@@ -6,7 +6,7 @@ Proyecto compañero de una serie de tutoriales en español para The Guild IT.
 
 ## Estado
 
-La parte 1 ofrece búsqueda literal y lectura con validación de rutas. La parte 2 incorpora `search_semantic` opcional y está en validación para el tutorial. El notebook y el checkpoint público de esa parte siguen pendientes. El Dockerfile es preliminar.
+La parte 1 ofrece búsqueda literal y lectura con validación de rutas. La parte 2 incorpora `search_semantic` opcional y está en validación para el tutorial. Su checkpoint público es `eb62f5d69b42a069bb4fde4c32fe918ac37a28ca`. El [notebook de Colab](notebooks/README.md) utiliza ese código y corpus. Su ejecución en un runtime limpio de Colab sigue pendiente de verificación. El Dockerfile es preliminar.
 
 ## Requisitos
 
@@ -136,7 +136,7 @@ Las notas son datos, no instrucciones confiables para el agente. La validación 
 
 ## Pendientes de la parte 2
 
-Después de revisar el checkpoint corregido con Ricardo, faltan fijar el commit para Colab, comprobar el acceso público y ejecutar el notebook completo en un entorno limpio. La redacción editorial utilizará los resultados observados y pasará por las aprobaciones de esquema, texto y paquete.
+Se fijó el checkpoint y se comprobó su acceso anónimo. Queda verificar el notebook completo en un runtime limpio de Colab. La redacción editorial utilizará los resultados observados y pasará por las aprobaciones de esquema, texto y paquete.
 
 ## Cuándo no usarlo
 
