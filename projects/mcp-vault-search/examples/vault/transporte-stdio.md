@@ -1,6 +1,6 @@
 # Transporte por entrada y salida estándar
 
-MCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación ocurre exclusivamente por entrada y salida estándar, usando mensajes JSON codificados con longitud.
+MCP sobre stdio permite que el cliente inicie el servidor como un proceso independiente. La comunicación usa mensajes JSON-RPC en UTF-8 por entrada y salida estándar. Cada mensaje se delimita con un salto de línea.
 
 El servidor preserva stdout para mensajes MCP. Los diagnósticos y advertencias se escriben en stderr, permitiendo que herramientas de monitoreo o el operador los inspeccionen sin interferir en la comunicación con el cliente.
 

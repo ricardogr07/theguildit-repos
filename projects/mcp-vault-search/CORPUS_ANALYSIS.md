@@ -1,89 +1,37 @@
-# Corpus Analysis - Query 1 & 4 Failure Investigation
+# Análisis de recuperación del corpus sintético
 
-## Evaluation Status
-- **Result**: 2/4 pass with complete token validation
-- **Query 2 & 3**: PASS ✓
-- **Query 1 & 4**: FAIL (corpus/distractor analysis needed)
+## Evidencia histórica
 
-## Query 1: "¿Cómo puede un asistente usar funciones de otras aplicaciones?"
+El checkpoint `f6fd8e2` conserva la corrida de `evaluate_semantic_results.json`, con dos consultas aprobadas de cuatro bajo el criterio original. El objetivo debe aparecer entre las tres primeras notas distintas y por encima del distractor designado.
 
-### Target Analysis
-- **Target**: mcp.md (rank 6)
-- **Relevance**: Directly answers question—MCP (Model Context Protocol) enables using external functions
-- **Content**: Brief (217B), explains MCP connects clients with tools via common protocol
+| Consulta | Objetivo | Posición histórica | Distractor | Posición histórica |
+| --- | --- | --- | --- | --- |
+| Usar funciones de otras aplicaciones | `mcp.md` | 6 | `contenedores.md` | 1 |
+| Encontrar algo escrito con otras palabras | `busqueda-semantica.md` | 1 | `busqueda.md` | 2 |
+| Recuperar la parte final de una nota larga | `fragmentos.md` | 1 | `bitacora-de-incidente.md` | 2 |
+| Restringir acceso fuera de una carpeta | `rutas-seguras.md` | 4 | `datos-y-privacidad.md` | 3 |
 
-### Distractor Analysis
-- **Distractor**: contenedores.md (rank 1)
-- **Relevance**: Partially relevant—Docker containers *execute* the server, enabling "use of external functions" in infrastructure context
-- **Content**: Detailed (704B), explains containerization, volume mounting, distribution
+## Interpretación y revisión humana
 
-### Additional Relevant Note
-- **herramientas-mcp.md**: Not designated distractor, but also answers the query
-- **Observation**: Query 1 may have multiple valid answers; mcp.md + herramientas-mcp.md are semantically equivalent
-- **Issue**: contenedores.md (infrastructure context) ranks above both despite being about "how to run" not "how to use functions"
+La nota `mcp.md` es más breve que varias notas del corpus. Esa diferencia podría influir en los resultados, pero la corrida disponible no permite aislar su efecto. También puede influir la representación del modelo, la fragmentación y la superposición temática. El tamaño de las notas se registra como observación y su efecto sobre el ranking permanece como hipótesis.
 
-### Hypothesis
-- mcp.md is too brief (217B) to compete with contenedores.md (704B) on semantic similarity
-- Model may conflate "using external functions" with "executing external code" (containers do execute)
-- herramientas-mcp.md likely contains richer semantics than mcp.md but both are functionally correct answers
+Ricardo confirmó revisar `mcp.md` y `herramientas-mcp.md` como respuestas relevantes a la consulta 1. La evaluación conserva `mcp.md` como objetivo original para que los resultados se puedan comparar. Una revisión de etiquetas se registrará por separado.
 
-### Recommendation
-- Current criterion (target ranks better than designated distractor) is valid
-- Defer corpus expansion until confirming query semantics with human review
-- Note: herramientas-mcp.md should be evaluated as secondary target if available
+Para la consulta 4 se mantiene `rutas-seguras.md` como objetivo. La pregunta trata de acceso a archivos fuera de una carpeta. `datos-y-privacidad.md` desarrolla principalmente la transmisión de fragmentos al proveedor del cliente. Que el distractor aparezca antes revela una limitación en este caso de recuperación, sin demostrar su causa.
 
----
+## Correcciones del checkpoint
 
-## Query 4: "¿Cómo evito que el asistente abra documentos fuera de la carpeta que le compartí?"
+Las correcciones de huella y posición de líneas cambian la implementación. Las correcciones factuales sobre MCP, embeddings y división de notas cambian la versión del corpus. Se mantienen las doce notas y las cuatro consultas originales.
 
-### Target Analysis
-- **Target**: rutas-seguras.md (rank 4)
-- **Relevance**: Directly answers question—explains path validation, rejecting absolute paths and symlinks
-- **Content**: Medium (629B), explains validation logic and restrictions
+La nueva corrida se guarda en `evaluate_semantic_results_checkpoint_fixes.json`. El reporte registra la revisión exacta del modelo, las versiones de ejecución y las huellas del código y del corpus. Los archivos de corridas anteriores conservan sus resultados históricos.
 
-### Distractor Analysis
-- **Distractor**: datos-y-privacidad.md (rank 3)
-- **Relevance**: Partially relevant—explains privacy limits, but primarily about data transmission to external providers
-- **Content**: Detailed (781B), explains local embedding execution, fragment limits
+| Consulta | Posición nueva del objetivo | Posición nueva del distractor | Resultado |
+| --- | --- | --- | --- |
+| Usar funciones de otras aplicaciones | 5 | 1 | Falla |
+| Encontrar algo escrito con otras palabras | 1 | 3 | Pasa |
+| Recuperar la parte final de una nota larga | 1 | 2 | Pasa |
+| Restringir acceso fuera de una carpeta | 3 | 2 | Falla |
 
-### Query/Corpus Mismatch
-- Query focuses on: **Access control within vault** (rutas-seguras theme)
-- Distractor addresses: **Data privacy during transmission** (datos-y-privacidad theme)
-- **Semantic confusion**: Both use keywords "privacidad" / "control" / "restricción"
-- Model ranks datos-y-privacidad higher due to length and shared privacy vocabulary
+La corrida nueva mantiene 2/4 con las etiquetas originales. Estos cambios de posición corresponden a las correcciones del código y del texto. La corrida disponible no aísla la contribución individual de cada cambio.
 
-### Hypothesis
-- Query 4 is semantically clean (rutas-seguras is the correct answer)
-- datos-y-privacidad is a stronger semantic match due to length and shared privacy terminology
-- This is a **distractor selection issue**, not corpus weakness
-- If query truly means "prevent access outside folder", rutas-seguras is unambiguously correct
-- If query intended to include privacy concerns, distractor choice is wrong
-
-### Recommendation
-- Current criterion (target ranks better than designated distractor) is valid
-- Query 4 criterion may need re-evaluation: Is distractor too semantically similar?
-- Consider if datos-y-privacidad should be the target instead (privacy-focused interpretation)
-- Defer corpus expansion; this is a query/distractor alignment issue
-
----
-
-## Summary
-
-| Query | Target | Target Rank | Distractor | Distractor Rank | Issue |
-|-------|--------|-------------|-----------|-----------------|-------|
-| 1 | mcp.md | 6 | contenedores.md | 1 | Target too brief; distractor semantically strong on "using/executing" |
-| 2 | busqueda-semantica.md | 1 | busqueda.md | 2 | ✓ PASS |
-| 3 | fragmentos.md | 1 | bitacora-de-incidente.md | 2 | ✓ PASS |
-| 4 | rutas-seguras.md | 4 | datos-y-privacidad.md | 3 | Target correct; distractor semantically similar on privacy/control |
-
-## Next Steps (per plan)
-
-1. **Do not expand corpus yet** — Defer until after human review of query relevance
-2. **Query 1**: herramientas-mcp.md should be investigated as alternative target or multi-valid answer
-3. **Query 4**: Confirm query intent; consider if distractor alignment is issue
-4. **Preserve results**: Keep 2/4 evaluation as evidence before any corpus changes
-
-## Token Validation Status
-- ✅ All fragments validated ≤ 128 tokens (MiniLM limit)
-- ✅ Validation covers: initial chunks, reassigned chunks, final chunk
-- ✅ No fragments exceed limit
+La expansión del corpus queda pendiente de revisión humana. La evaluación sobre doce notas describe este conjunto de ejemplos. Se conservarán también los casos fallidos al redactar el tutorial.
