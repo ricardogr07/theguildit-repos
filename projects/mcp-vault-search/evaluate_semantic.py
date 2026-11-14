@@ -9,6 +9,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from mcp_vault_search.semantic import MODEL_NAME, MODEL_REVISION, build_index, semantic_search
+from mcp_vault_search.retrieval_metrics import recall_at_k, reciprocal_rank_at_k, unique_note_ranking
 from mcp_vault_search.vault import markdown_files, vault_root
 
 # Queries with expected targets and designated distractors (per plan line 74)
@@ -71,14 +72,14 @@ def main():
         # Semantic search with access validation; request more fragments to ensure enough unique notes
         semantic_results = semantic_search(chunks, query, embedder, vault_root_path=root, limit=50)
 
-        # Deduplicate by note path, preserving order; assign consecutive rank 1, 2, 3, ...
-        seen_notes = {}
-        note_rankings = []
-        for r in semantic_results:
-            if r['path'] not in seen_notes:
-                note_rank = len(note_rankings) + 1
-                seen_notes[r['path']] = note_rank
-                note_rankings.append((r['path'], note_rank))
+        # Calculate document-level metrics after deduplicating chunk hits.
+        ranked_notes = unique_note_ranking(semantic_results)
+        note_rankings = [(path, rank) for rank, path in enumerate(ranked_notes, 1)]
+        seen_notes = {path: rank for path, rank in note_rankings}
+        # The legacy labels contain one target per query. Additional relevant
+        # notes must be human-reviewed before being counted in this metric.
+        recall_3 = recall_at_k(ranked_notes, [expected_target], 3)
+        reciprocal_rank_10 = reciprocal_rank_at_k(ranked_notes, [expected_target], 10)
 
         print(f"Note rankings (unique notes, by first occurrence):")
         for note_path, note_rank in note_rankings[:5]:
@@ -119,6 +120,8 @@ def main():
             "full_results": semantic_results,
             "literal_matches": literal_results,
             "pass": passes,
+            "recall_at_3_single_target": recall_3,
+            "reciprocal_rank_at_10_single_target": reciprocal_rank_10,
         })
 
     # Summary
@@ -132,6 +135,9 @@ def main():
             print(f" (distractor at {r['distractor_position']})")
         else:
             print()
+
+    print(f"Recall@3 (single target): {sum(r['recall_at_3_single_target'] for r in results) / len(results):.3f}")
+    print(f"MRR@10 (single target): {sum(r['reciprocal_rank_at_10_single_target'] for r in results) / len(results):.3f}")
 
     # Write full results
     output_file = arguments.output
