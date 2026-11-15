@@ -1,52 +1,72 @@
-# G0 — Resumen de implementación y Definition of Done
+# G0 — Cierre de procedencia, trazabilidad y Definition of Done
 
-**Estado:** PARCIAL / BLOQUEADO PARA G1 (URL del artículo recibida; contenido del artículo no recuperable desde este entorno)  
+**Estado del gate: PASS (4/4)**  
 **Fecha:** 2026-11-14  
 **Rama de evidencia:** `codex/g0-baseline-evidence`  
-**Base comparada:** `codex/sprint-1-semantic-evaluation`, SHA `4a0ceb46a5ae2a6daa8f15939bca44d6198272c4`  
-**Evidencia principal:** [BASELINE_MANIFEST.json](BASELINE_MANIFEST.json)
+**Commit base auditado:** `4a0ceb46a5ae2a6daa8f15939bca44d6198272c4`  
+**Manifiesto:** [BASELINE_MANIFEST.json](BASELINE_MANIFEST.json)
 
-## Trabajo completado
+## Confirmación de los tutoriales publicados
 
-1. Se compararon las referencias de Git para `master`, parte 2 semántica, Colab y PR #3. La parte 2 está en una rama divergente respecto a `master`; Colab contiene un commit adicional y el PR #3 agrega tres commits de métricas.
-2. Se identificó `eb62f5d69b42a069bb4fde4c32fe918ac37a28ca` como el checkpoint que declara el README del proyecto. **Esto verifica la declaración del repositorio, no el artículo publicado.**
-3. Se registraron SHA-256 del `uv.lock` y `pyproject.toml` del commit base, revisión del modelo y hashes SHA-256 de los 12 Markdown sintéticos.
-4. Se compararon los 12 hashes de notas contra `evaluate_semantic_results_checkpoint_fixes.json`: **12/12 coinciden**.
-5. Se diferenciaron claramente métricas históricas de cualquier nueva corrida: 4 consultas, 2/4 bajo regla histórica, posiciones objetivo [5,1,1,3], Recall@3=0.75, MRR@10≈0.6333 con un solo target por consulta.
-6. Se detectó una diferencia de código: los SHA-256 de `semantic.py` y `evaluate_semantic.py` actuales **no son** los registrados en el reporte histórico. El `server.py` coincide. Por tanto, la corrida histórica no demuestra el comportamiento del commit de Sprint 1.
+El responsable del proyecto proporcionó fragmentos textuales de los comandos de instalación publicados en ambas partes. Ambos commits se comprobaron independientemente en el repositorio GitHub.
 
-## DoD y dictamen
-
-| Criterio | Estado | Evidencia / condición pendiente |
+| Tutorial | Comando literal de selección | Commit GitHub |
 | --- | --- | --- |
-| G0-1: árbol de commits y baseline identificados | **PASS** | Comparaciones de ramas y SHAs registrados en el manifest |
-| G0-2: lockfile, modelo y corpus fijados | **PASS** | SHA-256 de dependencias y 12 archivos, revisión fijada |
-| G0-3: evidencia histórica separada de una nueva medición | **PASS** | Reporte histórico y discrepancia de hashes de código documentados |
-| G0-4: checkpoint contrastado con artículo 2 publicado | **PENDING** | URL recibida, pero el contenido no se pudo recuperar para contrastar el commit enlazado |
+| Parte 1 | `git checkout 6fcf21268799c2280b7174e3427ac0438a7e50a8` | [6fcf212](https://github.com/ricardogr07/theguildit-repos/commit/6fcf21268799c2280b7174e3427ac0438a7e50a8) |
+| Parte 2 | `git switch --detach eb62f5d69b42a069bb4fde4c32fe918ac37a28ca` | [eb62f5d](https://github.com/ricardogr07/theguildit-repos/commit/eb62f5d69b42a069bb4fde4c32fe918ac37a28ca) |
 
-**Resultado G0:** 3/4 criterios cumplidos. **NO APROBADO** hasta resolver G0-4. La existencia de un README que referencia un checkpoint no demuestra qué commit enlaza realmente el tutorial publicado.
+Artículo de la parte 2: https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp
 
-## URL del artículo proporcionada
+**Alcance de verificación:** la página pública no se pudo recuperar automáticamente, pero sí se cotejaron los comandos exactos aportados por el autor contra commits y archivos reales. No se afirma haber verificado el HTML público independiente de esa evidencia.
 
-- Página publicada indicada por Ricardo: https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp
-- Se intentó leer la página con la herramienta web. El contenido devolvió `Cache miss`; los resultados de búsqueda no expusieron el contenido del artículo ni sus enlaces de código.
-- Un intento HTTP desde el entorno de ejecución tampoco resolvió el dominio (DNS).
-- La URL confirma la **identificación de la página indicada por el autor**; no es prueba independiente del commit al que enlaza.
+## Hallazgos de trazabilidad
 
-## Pendiente único para aprobar G0
+- El checkout de Parte 1 referencia el merge de hardening en `master`.
+- La Parte 2 fija `eb62f5d` y utiliza `uv sync --locked --extra semantic --python 3.11`.
+- `codex/mcp-vault-colab` agrega un commit al checkpoint semántico y aporta notebook/README.
+- `codex/sprint-1-semantic-evaluation` agrega tres commits sobre Colab, referenciados en PR #3.
+- Los 12 archivos Markdown sintéticos coinciden por SHA-256 con el reporte histórico.
+- Los hashes del código actual de `semantic.py` y `evaluate_semantic.py` no coinciden con los registrados en el benchmark histórico. Por ello se necesita una nueva corrida en G2.
+- Histórico: 4 consultas, 2/4 según criterio heredado, Recall@3=0.75 y MRR@10≈0.6333 con una sola etiqueta relevante.
 
-Comprobar en el artículo publicado la URL de código o tag efectivamente enlazado y asociarlo a un SHA inmutable. Si el artículo enlaza una rama móvil, registrar la decisión editorial o una versión fijada. Actualizar manifest y este resumen, revalidar G0-4 y solicitar aprobación explícita. No avanzar a G1 solo por disponer de la URL.
+## Definition of Done: dictamen formal
 
-## Alcance y seguridad
+| Criterio | Estado | Evidencia |
+| --- | --- | --- |
+| G0-1. Commits y estructura de ramas reconciliados | **PASS** | Comparaciones de master, checkpoint parte 2, Colab y PR #3 |
+| G0-2. Dependencias, modelo y hashes de corpus registrados | **PASS** | Lockfile, revisión de modelo y 12/12 SHA-256 en el manifiesto |
+| G0-3. Resultados históricos diferenciados de datos actuales | **PASS** | Metadata histórica y divergencias de código anotadas |
+| G0-4. Artículo publicado enlazado a commit real | **PASS** | Fragmentos literales aportados por el autor y commits comprobados en GitHub |
 
-- No se modificaron `semantic.py`, `server.py`, el evaluador ni las pruebas.
-- No se corrió el modelo real; eso corresponde a G2.
-- No se ejecutó ni adelantó G1.
-- No se fusionó ningún PR ni se creó tag/release.
-- Solo se utilizó un vault sintético.
+**Resultado G0: 4/4 criterios satisfechos. Etapa aprobada.**
+
+## Etiquetas de publicación propuestas
+
+Se proponen etiquetas **anotadas** que no alteran los commits:
+
+- `tutorial-1` → `6fcf21268799c2280b7174e3427ac0438a7e50a8`
+- `tutorial-2` → `eb62f5d69b42a069bb4fde4c32fe918ac37a28ca`
+
+**Estado: NO CREADAS.** La conexión GitHub de esta sesión no expone una operación para crear refs de etiquetas. Se deben comprobar refs existentes antes de publicar etiquetas. No mover una etiqueta publicada sin decisión explícita.
+
+```bash
+git fetch origin --tags
+git ls-remote --tags origin 'refs/tags/tutorial-1' 'refs/tags/tutorial-2'
+# Ejecutar solo si los nombres están libres:
+git tag -a tutorial-1 6fcf21268799c2280b7174e3427ac0438a7e50a8 -m "MCP Vault Search: tutorial 1 published checkpoint"
+git tag -a tutorial-2 eb62f5d69b42a069bb4fde4c32fe918ac37a28ca -m "MCP Vault Search: tutorial 2 published checkpoint"
+git push origin refs/tags/tutorial-1 refs/tags/tutorial-2
+```
+
+## Límites de la aprobación
+
+- El **PASS de G0** no implica aprobar PR #3, cerrar Sprint 1, hacer merge ni ejecutar G1.
+- No se ha vuelto a ejecutar el modelo real; es trabajo de G2.
+- Los tags no se crearon.
+- G1 se debe iniciar como una etapa distinta, siguiendo la secuencia y sin mezclar modificaciones funcionales con G0.
 
 ## Referencias
 
+- [G0 PR #4](https://github.com/ricardogr07/theguildit-repos/pull/4)
 - [Sprint Issue #2](https://github.com/ricardogr07/theguildit-repos/issues/2)
-- [PR de métricas #3](https://github.com/ricardogr07/theguildit-repos/pull/3)
-- [Commit declarado para Parte 2](https://github.com/ricardogr07/theguildit-repos/commit/eb62f5d69b42a069bb4fde4c32fe918ac37a28ca)
+- [Métricas PR #3](https://github.com/ricardogr07/theguildit-repos/pull/3)
