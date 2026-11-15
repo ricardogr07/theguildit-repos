@@ -9,6 +9,7 @@ from unittest.mock import patch
 from evaluation.dataset import load_json, validate_dataset
 from evaluation.metrics import score_query, summarize
 from evaluation.run_expanded import run, validate_legacy_queries
+from evaluation.verify_expanded import assert_approval_attestation
 
 
 HERE = Path(__file__).resolve().parents[1]
@@ -68,6 +69,40 @@ class DatasetValidationTest(TestCase):
         holdout["queries"][0]["query"] = original
         with self.assertRaisesRegex(ValueError, "consulta histórica"):
             validate_dataset(development, holdout, qrels, AVAILABLE)
+
+    def test_historical_query_reused_with_unicode_case_and_whitespace_is_rejected(self):
+        development, holdout, qrels = self.get_files()
+        original = load_json(EVAL / "historical_queries.json")["queries"][0]["query"]
+        holdout["queries"][0]["query"] = "  " + original.upper().replace(" ", "    ") + "\t"
+        with self.assertRaisesRegex(ValueError, "consulta histórica"):
+            validate_dataset(development, holdout, qrels, AVAILABLE)
+
+    def test_forged_report_approval_is_rejected(self):
+        development, holdout, qrels = self.get_files()
+        validated = validate_dataset(development, holdout, qrels, AVAILABLE)
+        metadata = {"dataset_validation": validated, "human_review_completed": True}
+        aggregate = {"annotation_status": "human_reviewed",
+                     "not_a_release_gate_without_review": False}
+        with self.assertRaises(AssertionError):
+            assert_approval_attestation(metadata, aggregate, validated, "development")
+
+    def test_provisional_holdout_report_cannot_claim_independent_approval(self):
+        development, holdout, qrels = self.get_files()
+        validated = validate_dataset(development, holdout, qrels, AVAILABLE)
+        metadata = {"dataset_validation": validated, "human_review_completed": False}
+        aggregate = {"annotation_status": "provisional_unreviewed",
+                     "not_a_release_gate_without_review": True}
+        with self.assertRaisesRegex(AssertionError, "holdout"):
+            assert_approval_attestation(metadata, aggregate, validated, "holdout")
+
+    def test_approved_synthetic_metadata_is_consistent_without_running_holdout(self):
+        development, holdout, _ = self.get_files()
+        reviewed_qrels = load_approved_fixture(EVAL / "qrels.json")
+        validated = validate_dataset(development, holdout, reviewed_qrels, AVAILABLE)
+        metadata = {"dataset_validation": validated, "human_review_completed": True}
+        aggregate = {"annotation_status": "human_reviewed",
+                     "not_a_release_gate_without_review": False}
+        assert_approval_attestation(metadata, aggregate, validated, "development")
 
     def test_unknown_note_is_rejected(self):
         d, h, q = self.get_files()
