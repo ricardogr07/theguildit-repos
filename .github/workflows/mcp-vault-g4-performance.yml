@@ -2,7 +2,7 @@ name: MCP Vault G4 Retrieval Performance
 
 on:
   pull_request:
-    branches: ["codex/g3-expanded-retrieval-evaluation"]
+    branches: ["codex/g3-expanded-retrieval-evaluation", "codex/mcp-vault-colab"]
     paths:
       - "projects/mcp-vault-search/**"
       - ".github/workflows/mcp-vault-g4-performance.yml"
