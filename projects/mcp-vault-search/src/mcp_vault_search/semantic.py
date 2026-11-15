@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import math
 from bisect import bisect_right
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +28,24 @@ class Chunk:
     start_line: int = 0
     end_line: int = 0
     note_hash: str = ""  # SHA-256 hash of full note; same for all chunks from note
+
+
+def _validated_unit_vector(values, *, context: str, expected_dim: int | None = None) -> list[float]:
+    """Validate model output before using a dot product as cosine similarity."""
+    try:
+        vector = [float(value) for value in values]
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{context}: el embedding debe contener números") from exc
+    if not vector:
+        raise ValueError(f"{context}: el embedding está vacío")
+    if expected_dim is not None and len(vector) != expected_dim:
+        raise ValueError(f"{context}: dimensión incompatible ({len(vector)} != {expected_dim})")
+    if not all(math.isfinite(value) for value in vector):
+        raise ValueError(f"{context}: el embedding contiene valores no finitos")
+    norm = math.hypot(*vector)
+    if not math.isfinite(norm) or not math.isclose(norm, 1.0, rel_tol=1e-3, abs_tol=1e-3):
+        raise ValueError(f"{context}: el embedding no está normalizado (norma L2 != 1)")
+    return vector
 
 
 def _split_paragraph(paragraph: str, max_chars: int) -> list[str]:
@@ -175,17 +194,27 @@ def build_index(root: Path, embedder: Embedder) -> list[Chunk]:
 
     texts = [text for _, text, _, _, _ in source]
     vectors = embedder.encode(texts, normalize_embeddings=True)
-    chunks = [
-        Chunk(
+    try:
+        count = len(vectors)
+    except TypeError as exc:
+        raise ValueError("El modelo no devolvió un lote de embeddings válido") from exc
+    if count != len(source):
+        raise ValueError(f"El modelo devolvió {count} vectores para {len(source)} fragmentos")
+
+    chunks = []
+    dimensions = None
+    for (path, text, start_line, end_line, note_hash), vector in zip(source, vectors, strict=True):
+        normalized = _validated_unit_vector(vector, context=f"Índice {path}", expected_dim=dimensions)
+        if dimensions is None:
+            dimensions = len(normalized)
+        chunks.append(Chunk(
             path=path,
             text=text,
-            vector=list(map(float, vector)),
+            vector=normalized,
             start_line=start_line,
             end_line=end_line,
             note_hash=note_hash,
-        )
-        for (path, text, start_line, end_line, note_hash), vector in zip(source, vectors, strict=True)
-    ]
+        ))
     return chunks
 
 
@@ -196,12 +225,21 @@ def semantic_search(chunks: Sequence[Chunk], query: str, embedder: Embedder, vau
     if limit < 1 or limit > 50:
         raise ValueError("limit debe estar entre 1 y 50")
 
+    if not chunks:
+        raise ValueError("El índice semántico está vacío")
     vault_root_path = vault_root(vault_root_path)
-    query_vector = embedder.encode([query], normalize_embeddings=True)[0]
-    scored = [
-        (sum(a * b for a, b in zip(chunk.vector, query_vector, strict=True)), chunk)
-        for chunk in chunks
-    ]
+    query_embeddings = embedder.encode([query], normalize_embeddings=True)
+    try:
+        query_count = len(query_embeddings)
+    except TypeError as exc:
+        raise ValueError("El modelo no devolvió un embedding de consulta válido") from exc
+    if query_count != 1:
+        raise ValueError("El modelo debe devolver exactamente un embedding de consulta")
+    query_vector = _validated_unit_vector(query_embeddings[0], context="Consulta")
+    scored = []
+    for chunk in chunks:
+        vector = _validated_unit_vector(chunk.vector, context=f"Índice {chunk.path}", expected_dim=len(query_vector))
+        scored.append((sum(a * b for a, b in zip(vector, query_vector, strict=True)), chunk))
 
     results = []
     note_validity: dict[str, bool] = {}  # Cache: path -> is_valid (True/False)
