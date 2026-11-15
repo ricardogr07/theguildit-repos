@@ -1,0 +1,57 @@
+name: MCP Vault G6 Release Gate Preflight (Expected Block)
+
+on:
+  pull_request:
+    branches: ["codex/g5-adversarial-regression-verification", "codex/mcp-vault-colab"]
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-g6-release-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  enforce-release-guard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/mcp-vault-search
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+      - name: Test release readiness logic without real embeddings
+        shell: bash
+        run: |
+          set -o pipefail
+          uv sync --locked --python 3.11
+          uv run --locked --python 3.11 python -m unittest discover -s tests -v 2>&1 | tee g6-unit.log
+      - name: Assert release candidate is correctly BLOCKED
+        shell: bash
+        run: |
+          set +e
+          uv run --locked --python 3.11 python -m scripts.check_release_gate \
+            > g6-preflight.json 2>&1
+          status=$?
+          set -e
+          cat g6-preflight.json
+          if [ "$status" -ne 2 ]; then
+            echo "ERROR: the unapproved release manifest must exit code 2, got $status"
+            exit 1
+          fi
+          echo "PASS: guard correctly refuses unsigned, unmerged release candidate"
+      - name: Preserve preflight evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g6-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/mcp-vault-search/g6-preflight.json
+            projects/mcp-vault-search/g6-unit.log
+          if-no-files-found: warn
+          retention-days: 90

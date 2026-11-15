@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "project": "mcp-vault-search",
+  "gate": "G6",
+  "status": "BLOCKED_PENDING_APPROVALS",
+  "release_target_branch": "codex/mcp-vault-colab",
+  "proposed_release_tag": "tutorial-2-stable",
+  "proposed_docker_branch": "codex/tutorial-3-docker",
+  "candidate_commit_sha": null,
+  "pr_merges": {
+    "13": null,
+    "14": null,
+    "15": null,
+    "16": null
+  },
+  "gate_approvals": {
+    "G0": {
+      "pass": true,
+      "evidence": "PR #4, G0_DOD_REPORT.md"
+    },
+    "G1": {
+      "pass": true,
+      "evidence": "PR #11; 51 tests + CI"
+    },
+    "G2": {
+      "pass": true,
+      "evidence": "PR #12; G2 real-model benchmark + independent metric verifier"
+    },
+    "G3": {
+      "pass": false,
+      "evidence": "PR #13; 24 proposed relevance judgments require independent review"
+    },
+    "G4": {
+      "pass": false,
+      "evidence": "PR #14; CI and measurements pending; metrics provisional"
+    },
+    "G5": {
+      "pass": false,
+      "evidence": "PR #15; a distinct independent reviewer must produce a signed adversarial report"
+    }
+  },
+  "owner_approval": {
+    "reviewer": null,
+    "approved_at_utc": null,
+    "accepted_medium_risks": []
+  },
+  "independent_review": {
+    "reviewer": null,
+    "reviewed_commit_sha": null,
+    "reviewed_at_utc": null,
+    "report_path": null
+  },
+  "open_critical_defects": [],
+  "open_high_defects": [],
+  "model": {
+    "name": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42"
+  },
+  "corpus": {
+    "path": "examples/vault",
+    "expected_notes": 12,
+    "reference_manifest": "docs/gates/G0/BASELINE_MANIFEST.json"
+  },
+  "release_evidence": {
+    "g2_real_model_ci": "https://github.com/ricardogr07/theguildit-repos/actions/runs/43674554263",
+    "g3_dev": null,
+    "g4_performance": null,
+    "g5_independent": null,
+    "head_ci": null
+  },
+  "notes": [
+    "This is a blocked RELEASE CANDIDATE manifest, not evidence of an approved checkpoint.",
+    "Do not create tutorial-2-stable or Docker branch before all gates, PR merges, annotation review and owner approval.",
+    "The eight holdout questions remain reserved until a strategy is selected and frozen."
+  ]
+}
