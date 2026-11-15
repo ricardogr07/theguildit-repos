@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "gate": "G0",
+  "title": "Source provenance, dependency and synthetic corpus baseline",
+  "recorded_at": "2026-11-14",
+  "gate_status": "PARTIAL_BLOCKED",
+  "reference_revision": {
+    "branch": "codex/sprint-1-semantic-evaluation",
+    "commit": "4a0ceb46a5ae2a6daa8f15939bca44d6198272c4",
+    "source_pr": "https://github.com/ricardogr07/theguildit-repos/pull/3",
+    "g0_branch": "codex/g0-baseline-evidence"
+  },
+  "repository": "ricardogr07/theguildit-repos",
+  "project_path": "projects/mcp-vault-search",
+  "ancestry": {
+    "master": "6fcf21268799c2280b7174e3427ac0438a7e50a8",
+    "semantic_part_2_checkpoint": "eb62f5d69b42a069bb4fde4c32fe918ac37a28ca",
+    "semantic_part_2_branch": "codex/mcp-vault-checkpoint-fixes",
+    "colab_base_of_sprint": "5a3a2f9c9e0a1f6480d6668987e4e9bd5cd2b9e9",
+    "part_2_versus_master": "diverged: semantic checkpoint ahead by 11 commits, behind by 1 according to comparison",
+    "colab_versus_semantic_checkpoint": "ahead by one commit: README and notebook files",
+    "sprint_versus_colab": "ahead by three commits: metrics and evaluator only"
+  },
+  "publication": {
+    "claimed_published_by_project_owner": true,
+    "verified_against_public_article": false,
+    "published_url": null,
+    "verified_published_code_sha": null,
+    "editorial_repository": "ricardogr07/theguildit-content",
+    "editorial_commit": "7b26a0ad1007c84ff282bb4c5e26acfe8bc55ea3",
+    "editorial_outline": "tutoriales/mcp-servidor-busqueda-vault/parte-2/outline.md",
+    "editorial_outline_status": "Outline pendiente de aprobación",
+    "editorial_final_article_path": "tutoriales/mcp-servidor-busqueda-vault/parte-2/index.md",
+    "editorial_final_article_present": false,
+    "checkpoint_eb62f5d_source": "MCP Vault Search README identifies this SHA as the semantic checkpoint; actual published article cannot yet be independently matched.",
+    "blocking_evidence": "Published article URL or editorial publication record linking the published tutorial to an exact code commit."
+  },
+  "dependencies": {
+    "lockfile": "uv.lock",
+    "lockfile_sha256": "06c33f6b484dea191115e7d124cb204a79ac12f5c6cd4382093de01237ea48c1",
+    "pyproject": "pyproject.toml",
+    "pyproject_sha256": "340c1e102c0710cc50855ea922652f8b69dc16fd59268868761d27d04eef0aa4",
+    "model_name": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "model_revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "extra": "semantic",
+    "python_constraint": ">=3.11",
+    "note": "Hashes were computed from UTF-8 GitHub file contents at the pinned reference revision, not from a local build."
+  },
+  "corpus": {
+    "path": "examples/vault",
+    "type": "synthetic_markdown",
+    "note_count": 12,
+    "sha256": {
+      "bitacora-de-incidente.md": "d11a8490c26a8e17938459074468ad8e0c86b847b30dc320505447087a9ae593",
+      "busqueda-semantica.md": "371d27cfc908c74720b8a4ada32a4156cfb58757337ec4be06e4a00b9b2ffbf4",
+      "busqueda.md": "ea1516d8b19161b5b9dc342cf44b62daec314548637a6df146bebdc123220000",
+      "contenedores.md": "567536554bc7be9d0d58ef126a47a2dd4a674b988b4687743b566d076d689839",
+      "datos-y-privacidad.md": "fd0459dd47fe5300332ac4af47a892a15bb8d3c0f09f24c9c1fee51cbbbd0358",
+      "embeddings.md": "fb688d776d6b55cf41a03a8078ff1e28ef8b0444005f0c580e488916dd7f44",
+      "fragmentos.md": "b59a24fc56b9b78b4c5c9e55fd414c508c0bad423362e492e578ee55f9877b05",
+      "herramientas-mcp.md": "0dfc5e292c1ef353b82fe7f6fbeea62ede3b9ac9e5cdd7f5df1584bc31801c91",
+      "indice-local.md": "065600c37fb1506a5cf6ec5cba6bae1e0f575a870a784bc88fbea6ce00f1ef0c",
+      "mcp.md": "bc9c5bc0b6846279c8ad62a6264561210a72b7ebc92d3b71f28c6bbf679b7e5e",
+      "rutas-seguras.md": "a7a5d72db67e154ac248c12d9c4a6b6b96e056b49d6e7dfd9dc5532ceb86bfea",
+      "transporte-stdio.md": "ffaa0b62d53f79874a12cac4b20d1fa74f75c5573976821bc9577517a73bef53"
+    },
+    "all_12_sha256_verified_against_historical_report": true,
+    "excluded_non_markdown_data": [
+      "examples/vault/.index.json",
+      "examples/vault/.index_test.json"
+    ]
+  },
+  "source_files_sha256": {
+    "src/mcp_vault_search/semantic.py": "618ff054382c5a2c2e39943fe596fa24a35666578fd5404e47063aff16adcdb2",
+    "src/mcp_vault_search/server.py": "04b3e5cae0979d01b5f4220bab2bc85d69fd2d7d77f7cdd253c383b656652dae",
+    "src/mcp_vault_search/retrieval_metrics.py": "84999eb0c2f12ea589addadee7e84e4b6dc52b43f3d373704667eedc0533389a",
+    "evaluate_semantic.py": "eb45a8b92b9f3d7246fec2fef28cf82de5b56a66d3edf9add62dd16be85199d1"
+  },
+  "historical_record": {
+    "file": "evaluate_semantic_results_checkpoint_fixes.json",
+    "file_sha256": "fa10f449c8537ebd53175ce74e9d5cd73cbc58787732a4f8586c30e9464b9edb",
+    "number_of_queries": 4,
+    "passing_legacy_rule": 2,
+    "target_positions": [
+      5,
+      1,
+      1,
+      3
+    ],
+    "single_target_recall_at_3": 0.75,
+    "single_target_mrr_at_10": 0.6333333333333333,
+    "reported_python": "3.11.14",
+    "reported_packages": {
+      "sentence-transformers": "6.2.0",
+      "transformers": "5.21.0",
+      "torch": "2.14.1"
+    },
+    "reported_model_token_limit": 128,
+    "reported_model_revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "recorded_source_sha256": {
+      "src/mcp_vault_search/semantic.py": "ac2438794a7514da79cfb81350154f54f287d12cfe250e4712a174fc34871b7a",
+      "src/mcp_vault_search/server.py": "04b3e5cae0979d01b5f4220bab2bc85d69fd2d7d77f7cdd253c383b656652dae",
+      "evaluate_semantic.py": "c48deb3aa8fa2f3778a59c94d165fd64d4abba3fdf6a4387aae18488a76b98e8"
+    },
+    "recorded_semantic_source_matches_pinned_reference": false,
+    "recorded_server_source_matches_pinned_reference": true,
+    "recorded_evaluator_source_matches_pinned_reference": false,
+    "status": "HISTORICAL_ONLY_NOT_REEXECUTED",
+    "interpretation": "Historical corpus hashes match the current 12 notes, but recorded semantic.py and evaluator source hashes differ from the pinned sprint source. A fresh evaluation is required under G2."
+  },
+  "definition_of_done": [
+    {
+      "id": "G0-1",
+      "criterion": "Commit and branch ancestry are identified and compared",
+      "status": "PASS",
+      "evidence": "git comparison and pinned SHAs"
+    },
+    {
+      "id": "G0-2",
+      "criterion": "Manifest contains lockfile, model revision and verified corpus SHA-256 values",
+      "status": "PASS",
+      "evidence": "SHA-256 checks against the historical evaluation report"
+    },
+    {
+      "id": "G0-3",
+      "criterion": "Historical and current evidence are explicitly distinguished",
+      "status": "PASS",
+      "evidence": "historical_record.status and recorded source hash discrepancies"
+    },
+    {
+      "id": "G0-4",
+      "criterion": "Published Part 2 article code reference independently verified",
+      "status": "PENDING",
+      "evidence": "Editorial repository holds an outdated outline; no final article or publication URL was found"
+    }
+  ],
+  "next_gate_allowed": false,
+  "next_step": "Obtain authoritative publication URL or publication record, verify its code checkpoint, update manifest and request explicit G0 review before G1.",
+  "scope_boundary": "G0 only: no code logic changed, no benchmark executed, no release/merge/tag created"
+}
