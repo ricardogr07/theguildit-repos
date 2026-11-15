@@ -2,7 +2,7 @@
 
 **Issue:** [#9](https://github.com/ricardogr07/theguildit-repos/issues/9) · **PR:** [#15](https://github.com/ricardogr07/theguildit-repos/pull/15)  
 **Estado:** pruebas adversariales automatizadas PASS; **revisión por un segundo agente/persona PENDING**, gate no aprobado.  
-**Evidencia automatizada:** [G5 adversarial replay](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455), [artefacto y logs](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455/artifacts/14162002836), [CI estándar](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220408).
+**Evidencia automatizada:** [G5 adversarial replay](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717392641), [artefacto y logs](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717392641/artifacts/14162002836), [CI estándar](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717392791).
 
 ## Ataques implementados
 - Reconstrucción positiva de un reporte G2 coherente a partir del histórico.
@@ -13,8 +13,8 @@
 - Endurecimiento adicional: `.gitattributes` fuerza LF para notas/código y evita variaciones de SHA-256 en checkouts Windows; descubierto por un fallo adversarial real y corregido.
 
 ## CI verificable
-- [Suite estándar de G5](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220408): **5/5 jobs success**, 87 pruebas descubiertas, sin fallos (Windows/Linux y wheel).
-- [Replay real](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455): **87 pruebas**, G2 real reejecutado con 2/4 y Recall@3=0.75; cálculo independiente PASS.
+- [Suite estándar de G5](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717392791): **5/5 jobs success**, 91 pruebas descubiertas, sin fallos (Windows/Linux y wheel).
+- [Replay real](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717392641): **91 pruebas**, G2 real reejecutado con 2/4 y Recall@3=0.75; cálculo independiente PASS.
 - La evaluación G3 de desarrollo también fue rehecha con modelo real: Recall@3=0.8333333 sobre etiquetas propuestas, auditoría independiente PASS; holdout NO ejecutado.
 - Los logs contienen errores provocados intencionalmente; los procesos permanecen operativos y los jobs terminan en SUCCESS.
 
@@ -29,6 +29,8 @@
 | Reindexación manual necesaria ante notas nuevas/editadas | Baja en uso local | Documentación G1; reconstruir/reiniciar |
 | Artefactos de CI caducan tras 90 días | Media | Registrar hashes y archivarlos durablemente antes de G6 |
 | p95 solo 32 mediciones y corpus sintético repetido | Media | Reportar valores diagnósticos, no SLA |
+
+- Tras revisión de Codex, los tests del holdout usan fixtures autocontenidas y el verificador A/B comprueba IDs de desarrollo y decisiones de aceptación, sin depender de las qrels aprobadas futuras.
 
 ## Petición al revisor **independiente**
 
@@ -51,4 +53,4 @@
 | Riesgos medios aceptados con owner/seguimiento | **PENDING** |
 | Dictamen firmado del reviewer sobre SHA final | **PENDING** |
 
-**Dictamen: G5 BLOQUEADO para freeze.** La prueba adversarial automatizada no es una auditoría independiente, aunque haya 87 tests en verde.
+**Dictamen: G5 BLOQUEADO para freeze.** La prueba adversarial automatizada no es una auditoría independiente, aunque haya 91 tests en verde.
