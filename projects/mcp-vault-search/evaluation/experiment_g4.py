@@ -108,6 +108,8 @@ def synthetic_scale(notes: list[Path], root: Path, count: int) -> None:
         raise ValueError("Scaling requires a positive count")
     root.mkdir(parents=True, exist_ok=True)
     original = [note.read_text(encoding="utf-8") for note in notes]
+    if not original:
+        raise ValueError("Cannot scale an empty source corpus")
     for idx in range(count):
         note = root / f"synthetic-note-{idx:04d}.md"
         note.write_text(original[idx % len(original)], encoding="utf-8")
@@ -195,7 +197,7 @@ def measure():
 
     scaled = [{"note_count": 12, "chunk_count": len(chunks), "index_build_s": baseline_index_s,
                "process_peak_rss_mib": rss_mib()}]
-    notes = markdown_files(corpus_root)
+    notes = list(markdown_files(corpus_root))
     for count in args.scale_counts:
         with tempfile.TemporaryDirectory(prefix="mcp-vault-g4-") as tmp:
             synthetic_scale(notes, Path(tmp), count)
