@@ -17,3 +17,6 @@ evaluation/holdout_results.json
 evaluation/retrieval_metrics.json
 evaluation/g3-dev.log
 evaluation/g3-verify.log
+evaluation/g4_performance_results.json
+evaluation/g4-perf.log
+evaluation/g4-verify.log
