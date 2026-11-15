@@ -23,7 +23,7 @@ class G5ReviewFindingsTest(unittest.TestCase):
         for path in SOURCES:
             p = project/path
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(f'controlled-original-{path}\n', encoding='utf-8')
+            p.write_bytes(f'controlled-original-{path}\n'.encode('utf-8'))
             files[path] = hashlib.sha256(p.read_bytes()).hexdigest()
         subprocess.run(['git','init','-q',str(root)], check=True)
         subprocess.run(['git','-C',str(root),'config','user.name','Local TDD'], check=True)
