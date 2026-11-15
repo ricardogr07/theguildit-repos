@@ -80,6 +80,22 @@ class RankingAlternativeTests(TestCase):
         self.assertEqual(result["recall_3_regression_query_ids"], ["D02"])
         self.assertFalse(result["pre_registered_candidate_qualification"]["passed_on_provisional_development"])
 
+    def test_repeated_scaling_uses_reusable_note_source(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            one = root / "one.md"
+            one.write_text("# synthetic original", encoding="utf-8")
+            notes = [one]
+            synthetic_scale(notes, root / "small", 100)
+            synthetic_scale(notes, root / "large", 1000)
+            self.assertEqual(len(list((root / "small").glob("*.md"))), 100)
+            self.assertEqual(len(list((root / "large").glob("*.md"))), 1000)
+
+    def test_empty_source_corpus_fails_explicitly(self):
+        with TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, "empty source corpus"):
+                synthetic_scale([], Path(temp) / "scaled", 100)
+
     def test_scaled_synthetic_corpus_is_deterministic_and_unique_by_path(self):
         with TemporaryDirectory() as temp:
             temp_path = Path(temp)
