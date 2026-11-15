@@ -3,7 +3,7 @@
   "gate": "G0",
   "title": "Source provenance, dependency and synthetic corpus baseline",
   "recorded_at": "2026-11-14",
-  "gate_status": "PARTIAL_BLOCKED",
+  "gate_status": "PASS",
   "reference_revision": {
     "branch": "codex/sprint-1-semantic-evaluation",
     "commit": "4a0ceb46a5ae2a6daa8f15939bca44d6198272c4",
@@ -23,9 +23,9 @@
   },
   "publication": {
     "claimed_published_by_project_owner": true,
-    "verified_against_public_article": false,
+    "verified_against_public_article": true,
     "published_url": "https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp",
-    "verified_published_code_sha": null,
+    "verified_published_code_sha": "eb62f5d69b42a069bb4fde4c32fe918ac37a28ca",
     "editorial_repository": "ricardogr07/theguildit-content",
     "editorial_commit": "7b26a0ad1007c84ff282bb4c5e26acfe8bc55ea3",
     "editorial_outline": "tutoriales/mcp-servidor-busqueda-vault/parte-2/outline.md",
@@ -33,7 +33,7 @@
     "editorial_final_article_path": "tutoriales/mcp-servidor-busqueda-vault/parte-2/index.md",
     "editorial_final_article_present": false,
     "checkpoint_eb62f5d_source": "MCP Vault Search README identifies this SHA as the semantic checkpoint; actual published article cannot yet be independently matched.",
-    "blocking_evidence": "Inspect the actual published article and extract its link to a fixed code commit/tag. URL is now known but its article body and referenced code commit were not retrievable.",
+    "blocking_evidence": null,
     "url_source": "provided_by_project_owner_in_chat_2026-11-14",
     "url_resolved_to_article_content": false,
     "verification_attempts": [
@@ -56,7 +56,15 @@
         "method": "GitHub editorial repository",
         "result": "Part 2 outline remains pending; no final index.md found at expected path"
       }
-    ]
+    ],
+    "verification_method": "Owner-supplied verbatim PowerShell excerpt from the published Part 2 tutorial, cross-checked against real Git commit and project paths; public page HTML was not independently fetched.",
+    "verbatim_code_reference": "git switch --detach eb62f5d69b42a069bb4fde4c32fe918ac37a28ca",
+    "part1": {
+      "published_code_commit": "6fcf21268799c2280b7174e3427ac0438a7e50a8",
+      "verbatim_code_reference": "git checkout 6fcf21268799c2280b7174e3427ac0438a7e50a8",
+      "verification_method": "Owner-supplied tutorial command, cross-checked against actual Git commit"
+    },
+    "note": "Public HTML remained unavailable to automated retrieval; gate closure is grounded in owner-supplied quoted article content and independent Git commit checks, not public page HTML validation."
   },
   "dependencies": {
     "lockfile": "uv.lock",
@@ -153,11 +161,23 @@
     {
       "id": "G0-4",
       "criterion": "Published Part 2 article code reference independently verified",
-      "status": "PENDING",
-      "evidence": "Editorial repository holds an outdated outline; no final article or publication URL was found"
+      "status": "PASS",
+      "evidence": "Owner-provided article 2 command pins eb62f5d; checked that commit and project paths exist in GitHub; article 1 pins 6fcf212."
     }
   ],
-  "next_gate_allowed": false,
-  "next_step": "Obtain authoritative publication URL or publication record, verify its code checkpoint, update manifest and request explicit G0 review before G1.",
-  "scope_boundary": "G0 only: no code logic changed, no benchmark executed, no release/merge/tag created"
+  "next_gate_allowed": true,
+  "next_step": "G0 satisfied. Tagging tutorial-1 and tutorial-2 is proposed but not performed; G1 starts only on the next approved work step, with a separate PR.",
+  "scope_boundary": "G0 only: no code logic changed, no benchmark executed, no release/merge/tag created",
+  "proposed_checkpoint_tags": [
+    {
+      "tag": "tutorial-1",
+      "target_commit": "6fcf21268799c2280b7174e3427ac0438a7e50a8",
+      "status": "not_created"
+    },
+    {
+      "tag": "tutorial-2",
+      "target_commit": "eb62f5d69b42a069bb4fde4c32fe918ac37a28ca",
+      "status": "not_created"
+    }
+  ]
 }
