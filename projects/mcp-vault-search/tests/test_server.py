@@ -72,6 +72,8 @@ class ServerTest(TestCase):
                 "    def encode(self, texts, *, normalize_embeddings):\n"
                 "        if texts == ['explode']:\n"
                 "            raise RuntimeError('PRIVATE_SENTINEL_INTERNAL')\n"
+                "        if texts == ['invalid-vector']:\n"
+                "            return [[float('nan'), 0.0]]\n"
                 "        return [[1.0, 0.0] for text in texts]\n",
                 encoding="utf-8",
             )
@@ -103,6 +105,10 @@ class ServerTest(TestCase):
                 self.assertTrue(internal_error.is_error)
                 self.assertIn("Error interno en búsqueda semántica", internal_error.content[0].text)
                 self.assertNotIn("PRIVATE_SENTINEL_INTERNAL", internal_error.content[0].text)
+                invalid_vector = await client.call_tool("search_semantic", {"query": "invalid-vector"})
+                self.assertTrue(invalid_vector.is_error)
+                self.assertIn("Índice o embeddings semánticos inválidos", invalid_vector.content[0].text)
+                self.assertNotIn("no finitos", invalid_vector.content[0].text)
                 recovered = await client.call_tool("search_semantic", {"query": "note", "limit": 1})
                 self.assertFalse(recovered.is_error)
                 self.assertEqual(json.loads(recovered.content[0].text)[0]["path"], "a.md")
