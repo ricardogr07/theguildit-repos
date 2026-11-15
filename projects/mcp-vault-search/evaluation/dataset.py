@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import unicodedata
 from pathlib import Path
 
 
@@ -11,6 +12,11 @@ def load_json(path: Path) -> dict:
     if not isinstance(result, dict):
         raise ValueError(f"El archivo {path} debe contener un objeto JSON")
     return result
+
+
+def normalized_query(text: str) -> str:
+    """NFKC, casefold and whitespace normalization for duplicate-leakage checks."""
+    return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
 
 
 def validate_dataset(
@@ -34,15 +40,15 @@ def validate_dataset(
         raise ValueError("Hay consultas vacías")
     if any(not isinstance(q, str) or not q.strip() for q in ids):
         raise ValueError("Hay IDs vacíos")
-    if len(set(ids)) != 24 or len({q.casefold().strip() for q in queries}) != 24:
+    if len(set(ids)) != 24 or len({normalized_query(q) for q in queries}) != 24:
         raise ValueError("Hay consultas o IDs duplicados entre splits")
     historical = load_json(Path(__file__).with_name("historical_queries.json")).get("queries")
     if not isinstance(historical, list) or len(historical) != 4:
         raise ValueError("Las cuatro consultas históricas deben estar presentes")
-    original_queries = {row["query"].casefold().strip() for row in historical}
+    original_queries = {normalized_query(row["query"]) for row in historical}
     if len(original_queries) != 4:
         raise ValueError("Las consultas históricas están duplicadas")
-    if any(query.casefold().strip() in original_queries for query in queries):
+    if any(normalized_query(query) in original_queries for query in queries):
         raise ValueError("Una consulta nueva repite una consulta histórica")
     for split, split_rows, prefix in [
         ("development", dev, "D"),
