@@ -1,6 +1,6 @@
 # G0 — Resumen de implementación y Definition of Done
 
-**Estado:** PARCIAL / BLOQUEADO PARA G1  
+**Estado:** PARCIAL / BLOQUEADO PARA G1 (URL del artículo recibida; contenido del artículo no recuperable desde este entorno)  
 **Fecha:** 2026-11-14  
 **Rama de evidencia:** `codex/g0-baseline-evidence`  
 **Base comparada:** `codex/sprint-1-semantic-evaluation`, SHA `4a0ceb46a5ae2a6daa8f15939bca44d6198272c4`  
@@ -22,13 +22,20 @@
 | G0-1: árbol de commits y baseline identificados | **PASS** | Comparaciones de ramas y SHAs registrados en el manifest |
 | G0-2: lockfile, modelo y corpus fijados | **PASS** | SHA-256 de dependencias y 12 archivos, revisión fijada |
 | G0-3: evidencia histórica separada de una nueva medición | **PASS** | Reporte histórico y discrepancia de hashes de código documentados |
-| G0-4: checkpoint contrastado con artículo 2 publicado | **PENDING** | Falta URL o registro editorial de publicación que permita cotejar el commit publicado |
+| G0-4: checkpoint contrastado con artículo 2 publicado | **PENDING** | URL recibida, pero el contenido no se pudo recuperar para contrastar el commit enlazado |
 
 **Resultado G0:** 3/4 criterios cumplidos. **NO APROBADO** hasta resolver G0-4. La existencia de un README que referencia un checkpoint no demuestra qué commit enlaza realmente el tutorial publicado.
 
+## URL del artículo proporcionada
+
+- Página publicada indicada por Ricardo: https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp
+- Se intentó leer la página con la herramienta web. El contenido devolvió `Cache miss`; los resultados de búsqueda no expusieron el contenido del artículo ni sus enlaces de código.
+- Un intento HTTP desde el entorno de ejecución tampoco resolvió el dominio (DNS).
+- La URL confirma la **identificación de la página indicada por el autor**; no es prueba independiente del commit al que enlaza.
+
 ## Pendiente único para aprobar G0
 
-Obtener URL del artículo 2 publicado o un registro editorial de publicación fiable. Abrir el artículo y comprobar el enlace/referencia al código. Si no contiene commit ni tag fijo, documentar el SHA realmente reproducible y la corrección editorial necesaria. Actualizar manifest y este resumen con evidencia y volver a evaluar G0-4.
+Comprobar en el artículo publicado la URL de código o tag efectivamente enlazado y asociarlo a un SHA inmutable. Si el artículo enlaza una rama móvil, registrar la decisión editorial o una versión fijada. Actualizar manifest y este resumen, revalidar G0-4 y solicitar aprobación explícita. No avanzar a G1 solo por disponer de la URL.
 
 ## Alcance y seguridad
 
