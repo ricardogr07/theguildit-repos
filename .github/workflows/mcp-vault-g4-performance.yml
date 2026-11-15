@@ -1,0 +1,63 @@
+name: MCP Vault G4 Retrieval Performance
+
+on:
+  pull_request:
+    branches: ["codex/g3-expanded-retrieval-evaluation"]
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-g4-performance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-experiment:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/g4-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: projects/mcp-vault-search
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+      - name: Install pinned semantic dependencies
+        run: uv sync --locked --extra semantic --python 3.11
+      - name: Run cross-platform-safe offline tests
+        run: uv run --locked --extra semantic --python 3.11 python -m unittest discover -s tests -v
+      - name: Measure real CPU model and ranking alternative on development only
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.experiment_g4 \
+            --warm-repetitions 32 --scale-counts 100 1000 \
+            --output evaluation/g4_performance_results.json \
+            2>&1 | tee evaluation/g4-perf.log
+      - name: Independent audit of experiment JSON
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.verify_g4 \
+            --output evaluation/g4_performance_results.json \
+            2>&1 | tee evaluation/g4-verify.log
+      - name: Upload experiment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g4-cpu-experiment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/mcp-vault-search/evaluation/g4_performance_results.json
+            projects/mcp-vault-search/evaluation/g4-perf.log
+            projects/mcp-vault-search/evaluation/g4-verify.log
+          if-no-files-found: warn
+          retention-days: 90
