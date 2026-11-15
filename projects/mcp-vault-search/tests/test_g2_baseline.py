@@ -63,5 +63,5 @@ class G2ReportTest(TestCase):
         with TemporaryDirectory() as temp:
             mutated = Path(temp) / "historical.json"
             mutated.write_text(json.dumps(records), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "históricas"):
+            with self.assertRaisesRegex(ValueError, "no coinciden"):
                 load_reference(mutated)
