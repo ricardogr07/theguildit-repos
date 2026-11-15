@@ -62,6 +62,13 @@ class DatasetValidationTest(TestCase):
         with self.assertRaisesRegex(ValueError, "duplicados"):
             validate_dataset(d, h, q, AVAILABLE)
 
+    def test_historical_query_reused_in_holdout_is_rejected(self):
+        development, holdout, qrels = self.get_files()
+        original = load_json(EVAL / "historical_queries.json")["queries"][0]["query"]
+        holdout["queries"][0]["query"] = original
+        with self.assertRaisesRegex(ValueError, "consulta histórica"):
+            validate_dataset(development, holdout, qrels, AVAILABLE)
+
     def test_unknown_note_is_rejected(self):
         d, h, q = self.get_files()
         q["judgments"][0]["relevant_notes"] = ["not-present.md"]
