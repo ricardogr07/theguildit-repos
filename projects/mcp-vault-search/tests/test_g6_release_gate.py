@@ -79,7 +79,7 @@ class ReleaseGateTests(TestCase):
                             for reason in release_blockers(manifest, qrels, COMMIT)))
         manifest, qrels = synthetic_fully_approved_fixture()
         qrels["judgments"][0]["reviewer"] = None
-        self.assertTrue(any("relevance judgments" in reason
+        self.assertTrue(any("Qrel coverage or review invalid" in reason
                             for reason in release_blockers(manifest, qrels, COMMIT)))
 
     def test_review_on_unrelated_sha_cannot_approve_current_candidate(self):
