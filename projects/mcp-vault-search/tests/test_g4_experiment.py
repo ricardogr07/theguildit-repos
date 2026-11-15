@@ -12,7 +12,9 @@ from evaluation.experiment_g4 import (
     synthetic_scale,
 )
 from evaluation.metrics import score_query
-from evaluation.verify_g4 import assert_development_split, assert_candidate_selection
+from evaluation.verify_g4 import (
+    assert_development_split, assert_candidate_selection, assert_frozen_corpus, assert_frozen_rankings,
+)
 
 
 class RankingAlternativeTests(TestCase):
@@ -134,6 +136,32 @@ class RankingAlternativeTests(TestCase):
         report["recall_3_regression_query_ids"] = []
         with self.assertRaisesRegex(AssertionError, "regression lists"):
             assert_candidate_selection(rows, report)
+
+    def test_g4_verifier_rejects_nonexistent_notes_in_fabricated_ranking(self):
+        frozen = {f"doc{i}.md" for i in range(12)}
+        original = sorted(frozen)
+        tampered = original[:-1] + ["outside.md"]
+        rows = [{
+            "id": "D01", "baseline_ranking": tampered,
+            "candidate_ranking": list(reversed(tampered)),
+        }]
+        with self.assertRaisesRegex(AssertionError, "forged or missing"):
+            assert_frozen_rankings(rows, frozen)
+        rows[0]["baseline_ranking"] = original
+        with self.assertRaisesRegex(AssertionError, "forged or missing"):
+            assert_frozen_rankings(rows, frozen)
+        rows[0]["candidate_ranking"] = original
+        assert_frozen_rankings(rows, frozen)
+
+    def test_g4_verifier_rejects_forged_corpus_manifest(self):
+        root = Path(__file__).resolve().parents[1]
+        reference = json.loads(
+            (root / "evaluate_semantic_results_checkpoint_fixes.json").read_text(encoding="utf-8")
+        )[0]["evaluation_metadata"]
+        with self.assertRaisesRegex(AssertionError, "manifest"):
+            assert_frozen_corpus({"corpus_sha256": {"outside.md": "00"}}, reference)
+        self.assertEqual(len(assert_frozen_corpus(
+            {"corpus_sha256": reference["corpus_sha256"]}, reference)), 12)
 
     def test_scaled_synthetic_corpus_is_deterministic_and_unique_by_path(self):
         with TemporaryDirectory() as temp:
