@@ -27,9 +27,10 @@ def main():
     arguments = parser.parse_args()
     try:
         import sentence_transformers
-    except ImportError:
-        print("ERROR: sentence-transformers not installed. Install with: uv sync --locked --extra semantic")
-        return
+    except ImportError as exc:
+        raise SystemExit(
+            "ERROR: sentence-transformers no está instalado. Ejecuta uv sync --locked --extra semantic"
+        ) from exc
 
     root = vault_root("examples/vault")
     embedder = sentence_transformers.SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
