@@ -70,6 +70,8 @@ class ServerTest(TestCase):
                 "    def __init__(self, name, *, revision, device):\n"
                 "        pass\n"
                 "    def encode(self, texts, *, normalize_embeddings):\n"
+                "        if texts == ['explode']:\n"
+                "            raise RuntimeError('PRIVATE_SENTINEL_INTERNAL')\n"
                 "        return [[1.0, 0.0] for text in texts]\n",
                 encoding="utf-8",
             )
@@ -89,6 +91,21 @@ class ServerTest(TestCase):
                 results = json.loads(first.content[0].text)
                 self.assertEqual([item["path"] for item in results], [f"{name}.md" for name in "abcde"])
                 self.assertEqual((results[0]["line_start"], results[0]["line_end"]), (1, 4))
+                for arguments, expected in (
+                    ({"query": "  "}, "La consulta no puede estar vacía"),
+                    ({"query": "note", "limit": 0}, "limit debe estar entre 1 y 50"),
+                ):
+                    invalid = await client.call_tool("search_semantic", arguments)
+                    self.assertTrue(invalid.is_error)
+                    self.assertIn(expected, invalid.content[0].text)
+
+                internal_error = await client.call_tool("search_semantic", {"query": "explode"})
+                self.assertTrue(internal_error.is_error)
+                self.assertIn("Error interno en búsqueda semántica", internal_error.content[0].text)
+                self.assertNotIn("PRIVATE_SENTINEL_INTERNAL", internal_error.content[0].text)
+                recovered = await client.call_tool("search_semantic", {"query": "note", "limit": 1})
+                self.assertFalse(recovered.is_error)
+                self.assertEqual(json.loads(recovered.content[0].text)[0]["path"], "a.md")
 
                 (root / "a.md").write_text("# Note\n\nif allowed:\nrun()\n", encoding="utf-8")
                 edited = await client.call_tool("search_semantic", {"query": "note", "limit": 5})
