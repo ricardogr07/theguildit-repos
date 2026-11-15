@@ -12,3 +12,8 @@ baseline_real.json
 baseline_summary.json
 g2-run.log
 g2-verify.log
+evaluation/development_results.json
+evaluation/holdout_results.json
+evaluation/retrieval_metrics.json
+evaluation/g3-dev.log
+evaluation/g3-verify.log
