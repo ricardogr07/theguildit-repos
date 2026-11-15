@@ -1,0 +1,80 @@
+name: MCP Vault G5 Adversarial Replay
+
+on:
+  pull_request:
+    branches: ["codex/g4-retrieval-performance-experiments"]
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-g5-adversarial.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adversarial-replay:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/g5-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: projects/mcp-vault-search
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+      - name: Install pinned semantic dependencies
+        run: uv sync --locked --extra semantic --python 3.11
+      - name: Regression and adversarial corruption tests
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m unittest discover -s tests -v \
+            2>&1 | tee g5-unit.log
+      - name: Independently replay historical four with real embeddings
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python run_g2_baseline.py \
+            --output g5_g2_replay.json --summary g5_g2_summary.json \
+            2>&1 | tee g5-baseline.log
+          uv run --locked --extra semantic --python 3.11 python verify_g2_baseline.py \
+            --output g5_g2_replay.json \
+            2>&1 | tee g5-verify-g2.log
+      - name: Recalculate development metrics without accessing holdout
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.run_expanded \
+            --split development --allow-provisional \
+            --output evaluation/g5_dev_results.json \
+            --metrics-output evaluation/g5_dev_metrics.json \
+            2>&1 | tee g5-development.log
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.verify_expanded \
+            --split development --output evaluation/g5_dev_results.json \
+            2>&1 | tee g5-verify-g3.log
+      - name: Preserve adversarial evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g5-adversarial-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/mcp-vault-search/g5-unit.log
+            projects/mcp-vault-search/g5-baseline.log
+            projects/mcp-vault-search/g5-verify-g2.log
+            projects/mcp-vault-search/g5-development.log
+            projects/mcp-vault-search/g5-verify-g3.log
+            projects/mcp-vault-search/g5_g2_replay.json
+            projects/mcp-vault-search/g5_g2_summary.json
+            projects/mcp-vault-search/evaluation/g5_dev_results.json
+            projects/mcp-vault-search/evaluation/g5_dev_metrics.json
+          if-no-files-found: warn
+          retention-days: 90
