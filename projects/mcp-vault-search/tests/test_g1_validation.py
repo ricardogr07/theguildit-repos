@@ -1,6 +1,5 @@
 """G1 regressions: malformed model output, index lifecycle and evaluator failure."""
 
-import math
 import runpy
 import sys
 from pathlib import Path
@@ -11,8 +10,11 @@ from unittest.mock import patch
 from mcp_vault_search.semantic import Chunk, build_index, note_chunks, semantic_search
 
 
+_MISSING = object()
+
+
 class ConfigurableEmbedder:
-    def __init__(self, vectors, query_vectors=None):
+    def __init__(self, vectors, query_vectors=_MISSING):
         self.vectors = vectors
         self.query_vectors = query_vectors
 
@@ -20,7 +22,7 @@ class ConfigurableEmbedder:
         if not normalize_embeddings:
             raise AssertionError("Los embeddings deben solicitarse normalizados")
         if texts == ["consulta"]:
-            return self.query_vectors if self.query_vectors is not None else [[1.0, 0.0]]
+            return [[1.0, 0.0]] if self.query_vectors is _MISSING else self.query_vectors
         return self.vectors
 
 
