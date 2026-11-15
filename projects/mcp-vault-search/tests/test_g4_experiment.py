@@ -1,5 +1,6 @@
 """G4 local regression tests; do not load the real embedding model."""
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
@@ -11,6 +12,7 @@ from evaluation.experiment_g4 import (
     synthetic_scale,
 )
 from evaluation.metrics import score_query
+from evaluation.verify_g4 import assert_development_split, assert_candidate_selection
 
 
 class RankingAlternativeTests(TestCase):
@@ -95,6 +97,43 @@ class RankingAlternativeTests(TestCase):
         with TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "empty source corpus"):
                 synthetic_scale([], Path(temp) / "scaled", 100)
+
+    def test_development_verifier_rejects_holdout_ids_disguised_as_development(self):
+        root = Path(__file__).resolve().parents[1] / "evaluation"
+        dev = json.loads((root / "development_queries.json").read_text(encoding="utf-8"))["queries"]
+        hold = json.loads((root / "holdout_queries.json").read_text(encoding="utf-8"))["queries"]
+        rows = [
+            {"id": row["id"], "query": row["query"], "category": row["category"], "split": "development"}
+            for row in dev
+        ]
+        assert_development_split(rows, dev)
+        rows[0] = {
+            "id": hold[0]["id"], "query": hold[0]["query"],
+            "category": hold[0]["category"], "split": "development",
+        }
+        with self.assertRaisesRegex(AssertionError, "non-development"):
+            assert_development_split(rows, dev)
+
+    def test_verifier_rejects_forged_positive_qualification(self):
+        metric = score_query(["a.md", "b.md", "c.md"], ["a.md"])
+        rows = [{"id": "D01", "relevant_count": 1,
+                 "baseline_metrics": metric, "candidate_metrics": metric}]
+        report = compare_results(rows)
+        assert_candidate_selection(rows, report)
+        report["pre_registered_candidate_qualification"]["passed_on_provisional_development"] = True
+        with self.assertRaisesRegex(AssertionError, "Qualification decision"):
+            assert_candidate_selection(rows, report)
+
+    def test_verifier_rejects_suppressed_regression_ids(self):
+        hit = score_query(["a.md", "b.md", "c.md"], ["a.md"])
+        miss = score_query(["x.md", "y.md", "z.md", "a.md"], ["a.md"])
+        rows = [{"id": "D01", "relevant_count": 1,
+                 "baseline_metrics": hit, "candidate_metrics": miss}]
+        report = compare_results(rows)
+        self.assertEqual(report["recall_3_regression_query_ids"], ["D01"])
+        report["recall_3_regression_query_ids"] = []
+        with self.assertRaisesRegex(AssertionError, "regression lists"):
+            assert_candidate_selection(rows, report)
 
     def test_scaled_synthetic_corpus_is_deterministic_and_unique_by_path(self):
         with TemporaryDirectory() as temp:
