@@ -5,8 +5,8 @@
 
 ## Pruebas técnicas
 
-- [CI estándar G6](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716225139): cinco jobs exitosos, 94 tests descubiertos (Windows, Linux, wheel).
-- [G6 release preflight](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716225197): CI SUCCESS, 94 tests.
+- [CI estándar G6](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717546400): cinco jobs exitosos, 101 tests descubiertos (Windows, Linux, wheel).
+- [G6 release preflight](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717546387): CI SUCCESS, 101 tests.
 - El comando `python -m scripts.check_release_gate` retorna **exit code 2** porque faltan requisitos obligatorios. El job verifica explícitamente que ese rechazo ocurra; `eligible=false` es el comportamiento **correcto**, NO una aprobación.
 - `tests/test_g6_release_gate.py` incluye fixtures sintéticos positivos y negativos. La aprobación ficticia de test no significa una aprobación real.
 - `docs/gates/G6/RELEASE_MANIFEST.json` es una **plantilla BLOCKED**. Exigir all PRs mergeados, SHA final, firma del owner, firma de un revisor distinto, 24 qrels revisadas y 0 defectos HIGH/CRITICAL.
