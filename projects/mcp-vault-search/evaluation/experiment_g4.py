@@ -175,6 +175,8 @@ def measure():
         raw[qid] = hits
         rows.append({
             "id": qid,
+            "query": spec["query"],
+            "split": "development",
             "category": spec["category"],
             "relevant_count": len(labels[qid]),
             "baseline_ranking": baseline_rank,
