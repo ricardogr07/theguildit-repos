@@ -20,6 +20,54 @@ def close(a, b):
     return math.isclose(float(a), float(b), rel_tol=0.0, abs_tol=1e-9)
 
 
+def assert_development_split(rows: list[dict], queries: list[dict]) -> None:
+    """Check actual IDs, query texts and categories, not just a length and a flag."""
+    if len(rows) != len(queries):
+        raise AssertionError("Development split size changed")
+    for actual, expected in zip(rows, queries, strict=True):
+        if (
+            actual.get("id") != expected["id"]
+            or actual.get("query") != expected["query"]
+            or actual.get("category") != expected["category"]
+            or actual.get("split") != "development"
+        ):
+            raise AssertionError("Benchmark includes non-development query or altered ID")
+
+
+def assert_candidate_selection(rows: list[dict], comparison: dict) -> None:
+    """Recompute A/B decisions and per-query regressions independently."""
+    improvements = [
+        row["id"] for row in rows
+        if row["relevant_count"] and row["candidate_metrics"]["recall_at_3"] > row["baseline_metrics"]["recall_at_3"]
+    ]
+    regressions = [
+        row["id"] for row in rows
+        if row["relevant_count"] and row["candidate_metrics"]["recall_at_3"] < row["baseline_metrics"]["recall_at_3"]
+    ]
+    if (
+        comparison["recall_3_improvement_query_ids"] != improvements
+        or comparison["recall_3_regression_query_ids"] != regressions
+    ):
+        raise AssertionError("Candidate improvement/regression lists do not match per-query metrics")
+    conditions = comparison["pre_registered_candidate_qualification"]
+    if (
+        conditions["min_mean_recall_at_3_gain"] != 0.05
+        or conditions["min_mrr_at_10_delta"] != -0.01
+        or conditions["no_recall_at_3_query_regressions"] is not True
+    ):
+        raise AssertionError("Pre-registered qualification thresholds were changed")
+    delta = comparison["delta_b_minus_a"]
+    qualifies = (
+        delta["mean_recall_at_3"] >= 0.05
+        and delta["mrr_at_10"] >= -0.01
+        and not regressions
+    )
+    if conditions["passed_on_provisional_development"] is not qualifies:
+        raise AssertionError("Qualification decision conflicts with pre-registered thresholds")
+    if conditions["may_merge_to_production"] is not False:
+        raise AssertionError("Unreviewed candidate must not be automatically promoted")
+
+
 def verify(path: Path) -> dict:
     report = json.loads(path.read_text(encoding="utf-8"))
     md = report["metadata"]
@@ -36,6 +84,10 @@ def verify(path: Path) -> dict:
             raise AssertionError(f"Source file changed since benchmark: {name}")
     if len(rows) != 16 or len({r["id"] for r in rows}) != 16:
         raise AssertionError("Expected exactly 16 distinct development queries")
+    development = json.loads(
+        (PROJECT / "evaluation" / "development_queries.json").read_text(encoding="utf-8")
+    )["queries"]
+    assert_development_split(rows, development)
     if p["warm_query_count"] < 30 or len(p["warm_query_samples_ms"]) != p["warm_query_count"]:
         raise AssertionError("Too few or missing warm latency samples")
     timings = p["warm_query_samples_ms"]
@@ -61,6 +113,8 @@ def verify(path: Path) -> dict:
     for row in rows:
         qid = row["id"]
         rel = labels[qid]
+        if row["relevant_count"] != len(rel):
+            raise AssertionError("Reported relevant count does not match frozen qrels")
         a, b = row["baseline_ranking"], row["candidate_ranking"]
         if len(a) != 12 or len(b) != 12 or set(a) != set(b) or len(set(a)) != 12:
             raise AssertionError("Rankings must include the same 12 notes")
@@ -83,8 +137,7 @@ def verify(path: Path) -> dict:
             raise AssertionError(f"Candidate aggregate inconsistent: {name}")
         if not close(alt[name] - base[name], comparison["delta_b_minus_a"][name]):
             raise AssertionError(f"Reported delta inconsistent: {name}")
-    if comparison["pre_registered_candidate_qualification"]["may_merge_to_production"]:
-        raise AssertionError("Unreviewed alternative must never be auto-merged")
+    assert_candidate_selection(rows, comparison)
     return {
         "code_sha": ref,
         "p50_ms": p["warm_query_p50_ms"],
