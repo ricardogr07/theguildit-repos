@@ -16,12 +16,34 @@ EVAL = HERE / "evaluation"
 AVAILABLE = {p.name for p in (HERE / "examples" / "vault").glob("*.md")}
 
 
+def load_provisional_fixture(path):
+    """Construct a deliberately UNREVIEWED dataset even after real qrels are approved."""
+    value = load_json(path)
+    if Path(path).name == "qrels.json":
+        for judgment in value["judgments"]:
+            judgment["review_status"] = "proposed"
+            judgment["reviewer"] = None
+            judgment["reviewed_at"] = None
+    return value
+
+
+def load_approved_fixture(path):
+    """Fictional review metadata used only to test the holdout guard."""
+    value = load_json(path)
+    if Path(path).name == "qrels.json":
+        for judgment in value["judgments"]:
+            judgment["review_status"] = "approved"
+            judgment["reviewer"] = "synthetic-fixture-reviewer"
+            judgment["reviewed_at"] = "2026-11-15T12:00:00Z"
+    return value
+
+
 class DatasetValidationTest(TestCase):
     def get_files(self):
         return (
             load_json(EVAL / "development_queries.json"),
             load_json(EVAL / "holdout_queries.json"),
-            load_json(EVAL / "qrels.json"),
+            load_provisional_fixture(EVAL / "qrels.json"),
         )
 
     def test_complete_distinct_splits_and_provisional_labels(self):
@@ -66,16 +88,24 @@ class DatasetValidationTest(TestCase):
             validate_legacy_queries(historical)
 
     def test_holdout_guard_blocks_unreviewed_labels_before_model_load(self):
-        with patch.object(sys, "argv", [
-            "run_expanded.py", "--split", "holdout", "--allow-holdout",
-        ]):
-            with self.assertRaisesRegex(ValueError, "revisión humana"):
-                run()
+        with patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture):
+            with patch.object(sys, "argv", [
+                "run_expanded.py", "--split", "holdout", "--allow-holdout",
+            ]):
+                with self.assertRaisesRegex(ValueError, "revisión humana"):
+                    run()
 
     def test_provisional_development_requires_explicit_permission(self):
-        with patch.object(sys, "argv", ["run_expanded.py", "--split", "development"]):
-            with self.assertRaisesRegex(ValueError, "allow-provisional"):
-                run()
+        with patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture):
+            with patch.object(sys, "argv", ["run_expanded.py", "--split", "development"]):
+                with self.assertRaisesRegex(ValueError, "allow-provisional"):
+                    run()
+
+    def test_holdout_without_opt_in_remains_blocked_after_qrels_are_reviewed(self):
+        with patch("evaluation.run_expanded.load_json", side_effect=load_approved_fixture):
+            with patch.object(sys, "argv", ["run_expanded.py", "--split", "holdout"]):
+                with self.assertRaisesRegex(ValueError, "allow-holdout"):
+                    run()
 
 
 class G3MetricsTest(TestCase):
