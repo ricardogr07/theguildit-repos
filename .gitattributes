@@ -1,0 +1,5 @@
+# Freeze source/baseline line endings so SHA-256 stays stable across Windows/Linux.
+projects/mcp-vault-search/examples/vault/*.md text eol=lf
+projects/mcp-vault-search/**/*.py text eol=lf
+projects/mcp-vault-search/**/*.json text eol=lf
+projects/mcp-vault-search/uv.lock text eol=lf
