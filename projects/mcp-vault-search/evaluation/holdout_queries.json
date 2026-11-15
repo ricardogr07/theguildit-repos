@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "split": "holdout",
+  "queries": [
+    {
+      "id": "H01",
+      "query": "Quiero encontrar apuntes escritos con otros términos, ¿qué técnica me conviene?",
+      "category": "spanish_paraphrase",
+      "split": "holdout"
+    },
+    {
+      "id": "H02",
+      "query": "How is cosine similarity computed using unit-length embedding vectors?",
+      "category": "english",
+      "split": "holdout"
+    },
+    {
+      "id": "H03",
+      "query": "Si edito notas con el proceso en ejecución, ¿por qué puede seguir faltando contenido hasta reiniciar?",
+      "category": "index_lifecycle",
+      "split": "holdout"
+    },
+    {
+      "id": "H04",
+      "query": "Can a client ask the MCP server to read C:\\Windows\\System32 outside its notes folder?",
+      "category": "security",
+      "split": "holdout"
+    },
+    {
+      "id": "H05",
+      "query": "How does an AI client call a discovered MCP tool through JSON-RPC while keeping diagnostic logs separate?",
+      "category": "multiple_relevant",
+      "split": "holdout"
+    },
+    {
+      "id": "H06",
+      "query": "¿Qué pasa cuando una sola palabra sobrepasa el presupuesto de tokens del modelo?",
+      "category": "chunking",
+      "split": "holdout"
+    },
+    {
+      "id": "H07",
+      "query": "¿Cómo instalar PostgreSQL 17 en una Raspberry Pi?",
+      "category": "out_of_domain",
+      "split": "holdout"
+    },
+    {
+      "id": "H08",
+      "query": "What is the current price of Bitcoin?",
+      "category": "out_of_domain",
+      "split": "holdout"
+    }
+  ]
+}
