@@ -24,7 +24,7 @@
   "publication": {
     "claimed_published_by_project_owner": true,
     "verified_against_public_article": false,
-    "published_url": null,
+    "published_url": "https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp",
     "verified_published_code_sha": null,
     "editorial_repository": "ricardogr07/theguildit-content",
     "editorial_commit": "7b26a0ad1007c84ff282bb4c5e26acfe8bc55ea3",
@@ -33,7 +33,30 @@
     "editorial_final_article_path": "tutoriales/mcp-servidor-busqueda-vault/parte-2/index.md",
     "editorial_final_article_present": false,
     "checkpoint_eb62f5d_source": "MCP Vault Search README identifies this SHA as the semantic checkpoint; actual published article cannot yet be independently matched.",
-    "blocking_evidence": "Published article URL or editorial publication record linking the published tutorial to an exact code commit."
+    "blocking_evidence": "Inspect the actual published article and extract its link to a fixed code commit/tag. URL is now known but its article body and referenced code commit were not retrievable.",
+    "url_source": "provided_by_project_owner_in_chat_2026-11-14",
+    "url_resolved_to_article_content": false,
+    "verification_attempts": [
+      {
+        "method": "web.open",
+        "url": "https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp",
+        "result": "Cache miss; article body not retrievable"
+      },
+      {
+        "method": "web.search",
+        "query": "site:theguildit.io tutoriales búsqueda semántica local para tu servidor MCP",
+        "result": "No indexed page result establishing its code links"
+      },
+      {
+        "method": "public_http_direct",
+        "url": "https://theguildit.io/tutoriales/b%C3%BAsqueda-sem%C3%A1ntica-local-para-tu-servidor-mcp",
+        "result": "DNS resolution unavailable in execution environment"
+      },
+      {
+        "method": "GitHub editorial repository",
+        "result": "Part 2 outline remains pending; no final index.md found at expected path"
+      }
+    ]
   },
   "dependencies": {
     "lockfile": "uv.lock",
