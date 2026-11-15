@@ -13,6 +13,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from evaluation.dataset import load_json, validate_dataset
+
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
 REQUIRED_GATES = ("G0", "G1", "G2", "G3", "G4", "G5")
@@ -62,6 +64,8 @@ def release_blockers(manifest: dict, qrels: dict, current_sha: str) -> list[str]
         and review.get("report_path")
     ):
         blocked.append("Missing independent adversarial review and reviewed code SHA")
+    elif isinstance(candidate_sha, str) and review["reviewed_commit_sha"] != candidate_sha:
+        blocked.append("Independent review SHA differs from release candidate SHA; revalidation required")
 
     for severity in ("critical", "high"):
         items = manifest.get(f"open_{severity}_defects")
@@ -73,15 +77,17 @@ def release_blockers(manifest: dict, qrels: dict, current_sha: str) -> list[str]
     judgments = qrels.get("judgments")
     if not isinstance(judgments, list) or len(judgments) != 24:
         blocked.append("Expected 24 reviewed qrel judgments")
-    elif any(
-        not isinstance(j, dict)
-        or j.get("review_status") != "approved"
-        or not j.get("reviewer")
-        or not j.get("reviewed_at")
-        or not j.get("rationale")
-        for j in judgments
-    ):
-        blocked.append("One or more relevance judgments lack independent human approval")
+    else:
+        try:
+            source = PROJECT / "evaluation"
+            development = load_json(source / "development_queries.json")
+            holdout = load_json(source / "holdout_queries.json")
+            notes = {item.name for item in (PROJECT / "examples" / "vault").glob("*.md")}
+            audited = validate_dataset(development, holdout, qrels, notes)
+            if audited["approved_qrels_count"] != 24 or not audited["qrels_fully_reviewed"]:
+                blocked.append("One or more relevance judgments lack independent human approval")
+        except (ValueError, TypeError, KeyError) as exc:
+            blocked.append(f"Qrel coverage or review invalid: {exc}")
 
     evidence = manifest.get("release_evidence") or {}
     for name in ("g2_real_model_ci", "g3_dev", "g4_performance", "g5_independent", "head_ci"):
