@@ -1,49 +1,54 @@
-# G5 — Adversarial verification / independent review
+# G5 — Adversarial replay and independent-review package
 
-**Issue:** [#9](https://github.com/ricardogr07/theguildit-repos/issues/9) · **Estado:** revisión independiente pendiente.
+**Issue:** [#9](https://github.com/ricardogr07/theguildit-repos/issues/9) · **PR:** [#15](https://github.com/ricardogr07/theguildit-repos/pull/15)  
+**Estado:** pruebas adversariales automatizadas PASS; **revisión por un segundo agente/persona PENDING**, gate no aprobado.  
+**Evidencia automatizada:** [G5 adversarial replay](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455), [artefacto y logs](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455/artifacts/14162002836), [CI estándar](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220408).
 
-## Paquete de reproducción y ataque
+## Ataques implementados
+- Reconstrucción positiva de un reporte G2 coherente a partir del histórico.
+- Corrupción intencional de top-10, Recall por consulta y hash de lockfile, todas rechazadas.
+- Score NaN manipulado, rechazado.
+- Intento de marcar una qrel como `approved` sin revisor ni fecha, rechazado.
+- Pregunta OOD: no asignar Recall artificial.
+- Endurecimiento adicional: `.gitattributes` fuerza LF para notas/código y evita variaciones de SHA-256 en checkouts Windows; descubierto por un fallo adversarial real y corregido.
 
-La siguiente evidencia es **automática y escrita por el implementador**. No sustituye la revisión de otro agente/persona.
+## CI verificable
+- [Suite estándar de G5](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220408): **5/5 jobs success**, 87 pruebas descubiertas, sin fallos (Windows/Linux y wheel).
+- [Replay real](https://github.com/ricardogr07/theguildit-repos/actions/runs/43716220455): **87 pruebas**, G2 real reejecutado con 2/4 y Recall@3=0.75; cálculo independiente PASS.
+- La evaluación G3 de desarrollo también fue rehecha con modelo real: Recall@3=0.8333333 sobre etiquetas propuestas, auditoría independiente PASS; holdout NO ejecutado.
+- Los logs contienen errores provocados intencionalmente; los procesos permanecen operativos y los jobs terminan en SUCCESS.
 
-- `tests/test_g5_adversarial.py` reconstruye un reporte G2 válido a partir de hits históricos para confirmar que el verificador acepta datos coherentes.
-- Se alteran deliberadamente **top-10, Recall por consulta, hash de lockfile y score NaN**; cada corrupción debe producir un error comprobable.
-- Se intenta autoaprobar una qrel sin revisor ni fecha: el validador debe impedirlo.
-- Las consultas sin respuesta pertinente no se convierten artificialmente a Recall 0.
-- El CI G5 vuelve a ejecutar el modelo real con las cuatro consultas históricas y las 16 de desarrollo; compara las métricas con verificadores que leen resultados guardados.
-- Se reserva el holdout; ningún test de calidad usa sus resultados.
+## Matriz de riesgos para revisión externa
 
-## Hallazgos y riesgos que se entregan al revisor
-
-| Riesgo | Severidad preliminar | Estado / mitigación |
+| Hallazgo | Severidad provisional | Resolución/mitigación |
 | --- | --- | --- |
-| 24 qrels todavía propuestas sin validación humana | **Gate blocker** | Solicitar revisión de cada nota para cada query en PR #13 |
-| Comparación A/B sobre qrels provisionales | Media / Gate blocker para promover B | Mantener producción A; no decidir con este benchmark |
-| Modelo siempre entrega una nota incluso en consultas OOD | Media | Registrar forced-hit como 100 % cuando ocurre; diseñar abstención como trabajo posterior |
-| Comprobación de rutas no equivale a sandbox resistente a cambios concurrentes hostiles | Media | Mantener uso de vault local controlado, volúmenes de solo lectura en Docker |
-| Índice de memoria no se actualiza automáticamente | Baja en tutorial local / mayor en servicio continuo | Reinicio o reindexación, documentado en G1 |
-| Corridas y JSON en artefactos GitHub de 90 días | Media para auditabilidad a largo plazo | Archivar evidencias durables antes de G6 |
-| Estudios p95 con 32 mediciones y corpus copiado | Media para extrapolación | Reportar alcance diagnóstico, no SLA |
+| 24 qrels de G3 todavía propuestas | **BLOQUEANTE** | Otra persona/agente debe revisar 24 consultas contra las 12 notas |
+| A/B de G4 todavía condicionado a las qrels | Media | B descartado; producción A no cambia |
+| Ausencia de abstención en preguntas sin respuesta | Media | Reportar forced-hit/abstención por separado, sin falsa precisión |
+| Rutas locales no garantizan aislamiento OS ni TOCTOU fuerte | Media | Vault pequeño/controlado, no afirmar seguridad remota/multiusuario |
+| Reindexación manual necesaria ante notas nuevas/editadas | Baja en uso local | Documentación G1; reconstruir/reiniciar |
+| Artefactos de CI caducan tras 90 días | Media | Registrar hashes y archivarlos durablemente antes de G6 |
+| p95 solo 32 mediciones y corpus sintético repetido | Media | Reportar valores diagnósticos, no SLA |
 
-## Solicitud al revisor independiente
+## Petición al revisor **independiente**
 
-1. Revisar los diffs de PRs #13, #14 y #15 con una actitud adversarial. Reconstruir resultados desde un checkout limpio.
-2. Recalcular a mano o en código independiente la media por consulta de Recall@3/5, Precision@3 y MRR@10; verificar que OOD queda fuera del denominador.
-3. Ejecutar tres o más ataques nuevos fuera de los tests publicados (ej.: reemplazar un archivo por symlink al correr, forzar truncamiento de 50 chunks, manipular un hash).
-4. Leer las 12 notas y todas las qrels: documentar falsos positivos/negativos y discrepancias de relevancia.
-5. Clasificar cada defecto CRITICAL/HIGH/MEDIUM/LOW con archivo/línea, pasos y resolución. **Solo el revisor debe marcar su aprobación.**
-6. Verificar que ningún cambio del paquete altera contratos MCP, y que el holdout no fue usado para tuning.
-7. Firmar el dictamen con identificador de revisor y commit exacto. Si se cambia código después, revalidar lo afectado.
+1. Inspeccionar código y diffs de #13, #14, #15, no simplemente este reporte.
+2. Ejecutar **tres ataques NUEVOS** distintos de los que escribió el implementador y documentar cómo intentó romper el sistema.
+3. Recalcular a mano o por segunda implementación los resultados agregados, con especial cuidado en qrels de relevancia múltiple y OOD.
+4. Revisar las 24 relevancias propuestas contra las 12 notas, incluidas D02/D08/D14/D16/H05 y tres OOD; registrar discrepancias.
+5. Confirmar que el holdout no se usó para seleccionar ranking o pesos.
+6. Clasificar hallazgos CRITICAL/HIGH/MEDIUM/LOW y asociar pasos de reproducción, código/línea, mitigación y aprobación.
+7. Firmar con identificador y SHA exacto; modificaciones funcionales posteriores requieren revalidación.
 
-## Gate G5 Definition of Done
+## DoD G5
 
-| Criterio | Estado |
+| Condición | Estado |
 | --- | --- |
-| Revisión de diffs por revisor diferente del implementador | **PENDING** |
-| Suite, benchmark histórico, métricas y ≥3 ataques reprodu­cidos | Implementado en CI; pendiente de verificar resultados |
-| Hallazgos clasificados con trazabilidad y reproducción | **PENDING** revisor independiente |
-| Cero CRITICAL/HIGH abiertos | **NO CERTIFICADO** |
-| MEDIUM aceptados con propietario, mitigación y seguimiento | PENDING |
-| Dictamen independiente sobre SHA final | **PENDING** |
+| Suite, G2 real, G3 dev, >=3 casos adversariales automáticos | **PASS (implementador + CI)** |
+| Revisor diferente inspecciona los diffs | **PENDING** |
+| >=3 ataques nuevos de revisor externo | **PENDING** |
+| Hallazgos formalmente clasificados, cero CRITICAL/HIGH abiertos | **NO CERTIFICADO** |
+| Riesgos medios aceptados con owner/seguimiento | **PENDING** |
+| Dictamen firmado del reviewer sobre SHA final | **PENDING** |
 
-**No declarar PASS de G5 ni congelar un tag estable antes de obtener la revisión independiente.** El PR está abierto para comentarios.
+**Dictamen: G5 BLOQUEADO para freeze.** La prueba adversarial automatizada no es una auditoría independiente, aunque haya 87 tests en verde.
