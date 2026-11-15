@@ -2,7 +2,7 @@
 
 **Issue:** [#7](https://github.com/ricardogr07/theguildit-repos/issues/7) · **PR:** [#13](https://github.com/ricardogr07/theguildit-repos/pull/13)  
 **Estado técnico:** IMPLEMENTADO / CI PASS; **GATE PENDING revisión humana de relevancias**.  
-**Evidencia:** [G3 workflow run](https://github.com/ricardogr07/theguildit-repos/actions/runs/43714720353), [artefacto JSON y logs](https://github.com/ricardogr07/theguildit-repos/actions/runs/43714720353/artifacts/14162530262).
+**Evidencia:** [G3 workflow run](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717231530), [artefacto JSON y logs](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717231530/artifacts/14162530262).
 
 ## Dataset
 - Se conservaron intactas las 4 preguntas históricas.
@@ -13,11 +13,12 @@
 ## Evidencia técnica de la corrida real (provisional)
 
 - Python 3.11 y modelo multilingüe fijado por revisión.
-- [CI estándar](https://github.com/ricardogr07/theguildit-repos/actions/runs/43714720286): 5/5 jobs correctos, **70 pruebas** descubiertas.
-- [Benchmark de desarrollo](https://github.com/ricardogr07/theguildit-repos/actions/runs/43714720353): SUCCESS; verificación independiente del JSON = PASS.
+- [CI estándar](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717231464): 5/5 jobs correctos, **71 pruebas** descubiertas.
+- [Benchmark de desarrollo](https://github.com/ricardogr07/theguildit-repos/actions/runs/43717231530): SUCCESS; verificación independiente del JSON = PASS.
 - Macro de 15 consultas con relevancia propuesta: Recall@3 **0.8333333**, Recall@5 **0.8666667**, Precision@3 **0.3333333**, MRR@10 **0.8111111**.
 - Consulta OOD en desarrollo: tasa de forced-hit **1.0** y abstención **0.0**, porque el buscador actual no tiene umbral para abstenerse.
 - nDCG@5 **no calculado**: se necesitan etiquetas graduadas para reportarlo como previsto en el DoD.
+- Los tests de holdout usan qrels sintéticas provisionales o aprobadas, independientemente de futuras aprobaciones reales, y comprueban que no se cargue el modelo sin permiso.
 - No se usaron resultados del holdout para entrenamiento, selección ni ajustes. **Los archivos holdout son visibles en Git**: aislamiento de procedimiento, no secreto criptográfico.
 
 ## DoD del Issue #7
