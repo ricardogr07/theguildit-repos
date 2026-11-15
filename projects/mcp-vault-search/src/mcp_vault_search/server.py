@@ -82,6 +82,10 @@ if _semantic_enabled:
     def search_semantic(query: str, limit: int = 5) -> str:
         """Busca notas por similitud semántica usando embeddings."""
         try:
+            if not query.strip():
+                raise ValueError("La consulta no puede estar vacía")
+            if limit < 1 or limit > 50:
+                raise ValueError("limit debe estar entre 1 y 50")
             embedder = _get_embedder()
             index = _ensure_semantic_index()
             results = semantic_search(index, query, embedder, configured_root(), limit)
@@ -91,7 +95,7 @@ if _semantic_enabled:
             raise
         except Exception as exc:
             logger.exception("Error en búsqueda semántica")
-            raise ToolError(f"Error interno: {exc}") from exc
+            raise ToolError("Error interno en búsqueda semántica; consulta los registros del servidor") from exc
 
         return json.dumps(results, ensure_ascii=False, indent=2)
 
