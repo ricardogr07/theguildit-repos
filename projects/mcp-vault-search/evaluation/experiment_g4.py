@@ -13,7 +13,10 @@ import json
 import math
 import os
 import platform
-import resource
+try:
+    import resource
+except ImportError:  # Windows has no resource module; performance job runs on Linux.
+    resource = None
 import statistics
 import sys
 import tempfile
@@ -112,6 +115,8 @@ def synthetic_scale(notes: list[Path], root: Path, count: int) -> None:
 
 def rss_mib() -> float:
     # Linux ru_maxrss reports KiB. This is process-level peak including PyTorch native allocations.
+    if resource is None:
+        raise RuntimeError("El benchmark RSS requiere Linux/POSIX")
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 
