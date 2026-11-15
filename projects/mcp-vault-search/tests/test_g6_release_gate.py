@@ -35,7 +35,7 @@ def synthetic_fully_approved_fixture():
     manifest["owner_approval"]["approved_at_utc"] = "2026-11-15T00:00:00Z"
     manifest["independent_review"].update({
         "reviewer": "test-reviewer",
-        "reviewed_commit_sha": OTHER_SHA,
+        "reviewed_commit_sha": COMMIT,
         "reviewed_at_utc": "2026-11-15T00:00:00Z",
         "report_path": "synthetic/mock-review.md",
     })
@@ -80,6 +80,25 @@ class ReleaseGateTests(TestCase):
         manifest, qrels = synthetic_fully_approved_fixture()
         qrels["judgments"][0]["reviewer"] = None
         self.assertTrue(any("relevance judgments" in reason
+                            for reason in release_blockers(manifest, qrels, COMMIT)))
+
+    def test_review_on_unrelated_sha_cannot_approve_current_candidate(self):
+        manifest, qrels = synthetic_fully_approved_fixture()
+        manifest["independent_review"]["reviewed_commit_sha"] = OTHER_SHA
+        self.assertTrue(any("review SHA differs" in reason
+                            for reason in release_blockers(manifest, qrels, COMMIT)))
+
+    def test_duplicate_qrels_do_not_count_as_complete_24_query_coverage(self):
+        manifest, qrels = synthetic_fully_approved_fixture()
+        first = copy.deepcopy(qrels["judgments"][0])
+        qrels["judgments"] = [copy.deepcopy(first) for _ in range(24)]
+        self.assertTrue(any("Qrel coverage" in reason
+                            for reason in release_blockers(manifest, qrels, COMMIT)))
+
+    def test_unknown_note_in_approved_qrel_blocks_release(self):
+        manifest, qrels = synthetic_fully_approved_fixture()
+        qrels["judgments"][0]["relevant_notes"] = ["not-in-vault.md"]
+        self.assertTrue(any("Qrel coverage" in reason
                             for reason in release_blockers(manifest, qrels, COMMIT)))
 
     def test_missing_pr_merge_blocks_even_with_all_other_approvals(self):
