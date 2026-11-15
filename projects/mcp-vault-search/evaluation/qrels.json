@@ -1,0 +1,247 @@
+{
+  "schema_version": "1.0",
+  "corpus": "examples/vault",
+  "annotation_policy": "provisional_not_human_reviewed",
+  "judgment_instructions": "Review each query against all 12 original Markdown notes. Relevance means the note can materially answer the question; retain 0/1/multiple when justified. Record reviewer, reviewed_at, and rationale changes before changing status to approved.",
+  "judgments": [
+    {
+      "query_id": "D01",
+      "relevant_notes": [
+        "busqueda-semantica.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Explica recuperación por significado sin coincidencias exactas."
+    },
+    {
+      "query_id": "D02",
+      "relevant_notes": [
+        "busqueda.md",
+        "busqueda-semantica.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "La nota literal define coincidencia exacta; la semántica describe similitud de ideas."
+    },
+    {
+      "query_id": "D03",
+      "relevant_notes": [
+        "embeddings.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Describe norma unitaria, producto punto y similitud coseno."
+    },
+    {
+      "query_id": "D04",
+      "relevant_notes": [
+        "indice-local.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "El índice se guarda en memoria y se reconstruye al reiniciar."
+    },
+    {
+      "query_id": "D05",
+      "relevant_notes": [
+        "indice-local.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Describe huella por nota y descarte de fragmentos desactualizados."
+    },
+    {
+      "query_id": "D06",
+      "relevant_notes": [
+        "rutas-seguras.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Prohíbe enlaces simbólicos y rutas fuera del vault."
+    },
+    {
+      "query_id": "D07",
+      "relevant_notes": [
+        "datos-y-privacidad.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Avisa que el cliente puede enviar los fragmentos a servicios remotos."
+    },
+    {
+      "query_id": "D08",
+      "relevant_notes": [
+        "fragmentos.md",
+        "herramientas-mcp.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Una nota define posiciones de líneas y la otra expone read_note para abrir la nota."
+    },
+    {
+      "query_id": "D09",
+      "relevant_notes": [
+        "herramientas-mcp.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Explica descubrimiento y activación separada de herramientas."
+    },
+    {
+      "query_id": "D10",
+      "relevant_notes": [
+        "transporte-stdio.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Distingue mensajes del protocolo y diagnósticos del proceso."
+    },
+    {
+      "query_id": "D11",
+      "relevant_notes": [
+        "contenedores.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Documenta montaje de volumen sin permisos de escritura."
+    },
+    {
+      "query_id": "D12",
+      "relevant_notes": [
+        "bitacora-de-incidente.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "La bitácora registra diagnóstico, limpieza, reconstrucción del índice y reinicio."
+    },
+    {
+      "query_id": "D13",
+      "relevant_notes": [
+        "herramientas-mcp.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Enumera search_notes y read_note."
+    },
+    {
+      "query_id": "D14",
+      "relevant_notes": [
+        "datos-y-privacidad.md",
+        "busqueda-semantica.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Una documenta límites y difusión; la otra los scores y fragmentos recuperados."
+    },
+    {
+      "query_id": "D15",
+      "relevant_notes": [],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "El corpus solo trata MCP, búsqueda, rutas, Docker y operación; no contiene inflación."
+    },
+    {
+      "query_id": "D16",
+      "relevant_notes": [
+        "transporte-stdio.md",
+        "rutas-seguras.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Se usan stderr para diagnósticos de acceso y para evitar mezclar logs con stdout MCP."
+    },
+    {
+      "query_id": "H01",
+      "relevant_notes": [
+        "busqueda-semantica.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "La búsqueda semántica recupera formulaciones equivalentes."
+    },
+    {
+      "query_id": "H02",
+      "relevant_notes": [
+        "embeddings.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Explica normalización y producto punto equivalente a coseno."
+    },
+    {
+      "query_id": "H03",
+      "relevant_notes": [
+        "indice-local.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "El índice no se actualiza hasta reconstrucción; detecta hashes desactualizados."
+    },
+    {
+      "query_id": "H04",
+      "relevant_notes": [
+        "rutas-seguras.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Rutas absolutas o exteriores al vault están prohibidas."
+    },
+    {
+      "query_id": "H05",
+      "relevant_notes": [
+        "herramientas-mcp.md",
+        "transporte-stdio.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Herramientas explica la llamada; stdio explica JSON-RPC y stderr."
+    },
+    {
+      "query_id": "H06",
+      "relevant_notes": [
+        "fragmentos.md"
+      ],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "Las palabras se dividen si exceden el límite de tokens."
+    },
+    {
+      "query_id": "H07",
+      "relevant_notes": [],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "No existe material sobre instalación de PostgreSQL ni Raspberry Pi."
+    },
+    {
+      "query_id": "H08",
+      "relevant_notes": [],
+      "review_status": "proposed",
+      "reviewer": null,
+      "reviewed_at": null,
+      "rationale": "No hay información sobre cotizaciones de criptomonedas."
+    }
+  ]
+}
