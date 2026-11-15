@@ -68,6 +68,31 @@ def assert_candidate_selection(rows: list[dict], comparison: dict) -> None:
         raise AssertionError("Unreviewed candidate must not be automatically promoted")
 
 
+def assert_frozen_corpus(metadata: dict, historical: dict) -> set[str]:
+    """Check complete membership AND exact bytes of all 12 historical notes."""
+    reference = historical.get("corpus_sha256")
+    declared = metadata.get("corpus_sha256")
+    if not isinstance(reference, dict) or len(reference) != 12 or declared != reference:
+        raise AssertionError("Corpus manifest differs from frozen G2 benchmark")
+    root = PROJECT / "examples" / "vault"
+    present = {p.relative_to(root).as_posix() for p in root.rglob("*.md")}
+    if present != set(reference):
+        raise AssertionError("Working corpus note membership differs from historical manifest")
+    for name, expected_digest in reference.items():
+        if hashlib.sha256((root / name).read_bytes()).hexdigest() != expected_digest:
+            raise AssertionError(f"Frozen corpus note changed: {name}")
+    return set(reference)
+
+
+def assert_frozen_rankings(rows: list[dict], notes: set[str]) -> None:
+    """Both rankings must contain all and only original benchmark notes."""
+    for row in rows:
+        for key in ("baseline_ranking", "candidate_ranking"):
+            ranking = row[key]
+            if len(ranking) != len(notes) or len(set(ranking)) != len(notes) or set(ranking) != notes:
+                raise AssertionError(f"Ranking {row['id']}/{key} has forged or missing frozen corpus notes")
+
+
 def verify(path: Path) -> dict:
     report = json.loads(path.read_text(encoding="utf-8"))
     md = report["metadata"]
@@ -82,6 +107,11 @@ def verify(path: Path) -> dict:
     for name, expected in md["source_sha256"].items():
         if hashlib.sha256((PROJECT / name).read_bytes()).hexdigest() != expected:
             raise AssertionError(f"Source file changed since benchmark: {name}")
+    historical = json.loads(
+        (PROJECT / "evaluate_semantic_results_checkpoint_fixes.json").read_text(encoding="utf-8")
+    )[0]["evaluation_metadata"]
+    frozen_notes = assert_frozen_corpus(md, historical)
+    assert_frozen_rankings(rows, frozen_notes)
     if len(rows) != 16 or len({r["id"] for r in rows}) != 16:
         raise AssertionError("Expected exactly 16 distinct development queries")
     development = json.loads(
@@ -116,8 +146,8 @@ def verify(path: Path) -> dict:
         if row["relevant_count"] != len(rel):
             raise AssertionError("Reported relevant count does not match frozen qrels")
         a, b = row["baseline_ranking"], row["candidate_ranking"]
-        if len(a) != 12 or len(b) != 12 or set(a) != set(b) or len(set(a)) != 12:
-            raise AssertionError("Rankings must include the same 12 notes")
+        if set(a) != frozen_notes or set(b) != frozen_notes:
+            raise AssertionError("Rankings do not match the frozen corpus")
         for key, rank in (("baseline_metrics", a), ("candidate_metrics", b)):
             actual = score_query(rank, rel)
             claimed = row[key]
