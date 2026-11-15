@@ -1,0 +1,72 @@
+name: MCP Vault G3 Expanded Retrieval
+
+on:
+  pull_request:
+    branches: ["codex/mcp-vault-colab"]
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-g3-retrieval.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  development-benchmark:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/g3-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: projects/mcp-vault-search
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned real-model dependencies
+        run: uv sync --locked --extra semantic --python 3.11
+
+      - name: Unit and offline validation of holdout guard
+        run: uv run --locked --extra semantic --python 3.11 python -m unittest discover -s tests -v
+
+      - name: Evaluate development only, marking qrels provisional
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.run_expanded \
+            --split development --allow-provisional \
+            --output evaluation/development_results.json \
+            --metrics-output evaluation/retrieval_metrics.json \
+            2>&1 | tee evaluation/g3-dev.log
+
+      - name: Independently audit development results
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python -m evaluation.verify_expanded \
+            --output evaluation/development_results.json \
+            --split development \
+            2>&1 | tee evaluation/g3-verify.log
+
+      - name: Persist reproducible development evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g3-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/mcp-vault-search/evaluation/development_results.json
+            projects/mcp-vault-search/evaluation/retrieval_metrics.json
+            projects/mcp-vault-search/evaluation/g3-dev.log
+            projects/mcp-vault-search/evaluation/g3-verify.log
+          if-no-files-found: warn
+          retention-days: 90

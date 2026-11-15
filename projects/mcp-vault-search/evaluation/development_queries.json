@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "split": "development",
+  "queries": [
+    {
+      "id": "D01",
+      "query": "¿Cómo recupero una nota aunque no recuerde la frase exacta?",
+      "category": "spanish_paraphrase",
+      "split": "development"
+    },
+    {
+      "id": "D02",
+      "query": "¿En qué se diferencia buscar una palabra literal de encontrar ideas relacionadas?",
+      "category": "multiple_relevant",
+      "split": "development"
+    },
+    {
+      "id": "D03",
+      "query": "¿Por qué se normalizan vectores antes de calcular su producto punto?",
+      "category": "technical_paraphrase",
+      "split": "development"
+    },
+    {
+      "id": "D04",
+      "query": "¿Dónde se almacena el índice durante la sesión y cuándo se reconstruye?",
+      "category": "index_lifecycle",
+      "split": "development"
+    },
+    {
+      "id": "D05",
+      "query": "¿Qué pasa si una nota cambia después de calcular su huella SHA-256?",
+      "category": "cross_topic_distractor",
+      "split": "development"
+    },
+    {
+      "id": "D06",
+      "query": "¿Cómo impido que un symlink dé acceso a archivos fuera de la carpeta compartida?",
+      "category": "security_paraphrase",
+      "split": "development"
+    },
+    {
+      "id": "D07",
+      "query": "Si los embeddings son locales, ¿el cliente aún puede filtrar mis notas a un proveedor externo?",
+      "category": "privacy_contrast",
+      "split": "development"
+    },
+    {
+      "id": "D08",
+      "query": "¿Cómo ubico el párrafo original cuando la búsqueda devuelve un fragmento de una nota larga?",
+      "category": "multi_relevant",
+      "split": "development"
+    },
+    {
+      "id": "D09",
+      "query": "¿Cómo enumera un cliente las funciones MCP sin ejecutarlas?",
+      "category": "protocol_tools",
+      "split": "development"
+    },
+    {
+      "id": "D10",
+      "query": "What separates stdout from stderr in an MCP JSON-RPC connection?",
+      "category": "english",
+      "split": "development"
+    },
+    {
+      "id": "D11",
+      "query": "How can a Docker container mount the notes directory as read-only?",
+      "category": "english",
+      "split": "development"
+    },
+    {
+      "id": "D12",
+      "query": "¿Cómo se recuperó la latencia tras tres mil búsquedas consecutivas?",
+      "category": "incident",
+      "split": "development"
+    },
+    {
+      "id": "D13",
+      "query": "What tool names let the assistant search exact text and open a Markdown file?",
+      "category": "english_tools",
+      "split": "development"
+    },
+    {
+      "id": "D14",
+      "query": "¿Qué notas describen los riesgos de privacidad y los límites de lo que devuelve una búsqueda?",
+      "category": "multiple_relevant",
+      "split": "development"
+    },
+    {
+      "id": "D15",
+      "query": "¿Cuál es la tasa de inflación de México en 2026?",
+      "category": "out_of_domain",
+      "split": "development"
+    },
+    {
+      "id": "D16",
+      "query": "¿Dónde se registran errores de lectura y cómo impido que corrompan mensajes del protocolo?",
+      "category": "multiple_relevant",
+      "split": "development"
+    }
+  ]
+}
