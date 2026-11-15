@@ -2,7 +2,7 @@ name: MCP Vault G6 Release Gate Preflight (Expected Block)
 
 on:
   pull_request:
-    branches: ["codex/g5-adversarial-regression-verification"]
+    branches: ["codex/g5-adversarial-regression-verification", "codex/mcp-vault-colab"]
     paths:
       - "projects/mcp-vault-search/**"
       - ".github/workflows/mcp-vault-g6-release-preflight.yml"
