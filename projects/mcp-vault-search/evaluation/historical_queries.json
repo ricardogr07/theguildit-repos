@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "source": "evaluate_semantic.py/QUERIES; unchanged historical labels",
+  "queries": [
+    {
+      "id": "HIST01",
+      "query": "¿Cómo puede un asistente usar funciones de otras aplicaciones?",
+      "target": "mcp.md",
+      "distractor": "contenedores.md"
+    },
+    {
+      "id": "HIST02",
+      "query": "¿Cómo encuentro algo que escribí con otras palabras?",
+      "target": "busqueda-semantica.md",
+      "distractor": "busqueda.md"
+    },
+    {
+      "id": "HIST03",
+      "query": "¿Cómo evito que se pierda la parte final de un apunte muy extenso al procesarlo?",
+      "target": "fragmentos.md",
+      "distractor": "bitacora-de-incidente.md"
+    },
+    {
+      "id": "HIST04",
+      "query": "¿Cómo evito que el asistente abra documentos fuera de la carpeta que le compartí?",
+      "target": "rutas-seguras.md",
+      "distractor": "datos-y-privacidad.md"
+    }
+  ]
+}
