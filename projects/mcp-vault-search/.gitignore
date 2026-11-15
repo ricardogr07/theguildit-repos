@@ -8,3 +8,7 @@ dist/
 *.egg-info/
 .env
 index.json
+baseline_real.json
+baseline_summary.json
+g2-run.log
+g2-verify.log
