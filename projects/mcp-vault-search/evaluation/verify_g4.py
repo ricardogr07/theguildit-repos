@@ -15,6 +15,63 @@ from evaluation.experiment_g4 import nearest_percentile
 
 PROJECT = Path(__file__).resolve().parents[1]
 
+# The experiment records precisely these seven inputs. Allowing the report to
+# supply an arbitrary subset would make the provenance check opt-in.
+REQUIRED_SOURCE_FILES = frozenset({
+    "evaluation/experiment_g4.py",
+    "evaluation/metrics.py",
+    "evaluation/qrels.json",
+    "evaluation/development_queries.json",
+    "evaluation/holdout_queries.json",
+    "uv.lock",
+    "src/mcp_vault_search/semantic.py",
+})
+
+
+def assert_source_provenance(
+    declared: dict, commit_sha: str, project: Path = PROJECT
+) -> None:
+    """Reject partial manifests, dirty local sources, and non-committed evidence."""
+    if not isinstance(declared, dict) or set(declared) != REQUIRED_SOURCE_FILES:
+        raise AssertionError("Source-hash manifest must include the exact frozen G4 inputs")
+    repository = Path(subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], cwd=project, text=True,
+    ).strip())
+    prefix = project.resolve().relative_to(repository.resolve()).as_posix()
+    for name in sorted(REQUIRED_SOURCE_FILES):
+        claimed = declared[name]
+        working_bytes = (project / name).read_bytes()
+        # git show returns the committed blob, not any modified working-tree bytes.
+        object_name = f"{commit_sha}:{prefix}/{name}" if prefix != "." else f"{commit_sha}:{name}"
+        try:
+            committed_bytes = subprocess.check_output(
+                ["git", "show", object_name], cwd=repository, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise AssertionError(f"G4 input missing from recorded commit: {name}") from exc
+        if (not isinstance(claimed, str)
+                or hashlib.sha256(working_bytes).hexdigest() != claimed
+                or hashlib.sha256(committed_bytes).hexdigest() != claimed):
+            raise AssertionError(f"Source hash differs from working tree or commit: {name}")
+
+
+def assert_annotation_attestation(metadata: dict, judgments: list[dict]) -> str:
+    """Derive review state from all qrels, never trust a report's own label."""
+    if not isinstance(judgments, list) or len(judgments) != 24:
+        raise AssertionError("Expected exactly 24 actual qrel review records")
+    for qrel in judgments:
+        if not isinstance(qrel, dict) or qrel.get("review_status") not in ("proposed", "approved"):
+            raise AssertionError("Invalid qrel review status")
+        if qrel["review_status"] == "approved" and (
+            not qrel.get("reviewer") or not qrel.get("reviewed_at")
+        ):
+            raise AssertionError("Approved qrel lacks reviewer identity or review date")
+    approved = all(qrel["review_status"] == "approved" for qrel in judgments)
+    actual_status = "human_reviewed" if approved else "provisional_unreviewed"
+    if metadata.get("annotation_status") != actual_status:
+        raise AssertionError("Claimed annotation status differs from actual qrels")
+    return actual_status
+
 
 def close(a, b):
     return math.isclose(float(a), float(b), rel_tol=0.0, abs_tol=1e-9)
@@ -104,9 +161,7 @@ def verify(path: Path) -> dict:
         raise AssertionError("Benchmark commit differs from checkout")
     if md["holdout_evaluated"] or not md["used_development_only"]:
         raise AssertionError("Holdout data was used in a development experiment")
-    for name, expected in md["source_sha256"].items():
-        if hashlib.sha256((PROJECT / name).read_bytes()).hexdigest() != expected:
-            raise AssertionError(f"Source file changed since benchmark: {name}")
+    assert_source_provenance(md.get("source_sha256"), ref)
     historical = json.loads(
         (PROJECT / "evaluate_semantic_results_checkpoint_fixes.json").read_text(encoding="utf-8")
     )[0]["evaluation_metadata"]
@@ -135,10 +190,16 @@ def verify(path: Path) -> dict:
     if any(s["index_build_s"] <= 0 or s["process_peak_rss_mib"] <= 0 for s in p["scale"]):
         raise AssertionError("Invalid performance measurement")
 
-    labels = {
-        q["query_id"]: set(q["relevant_notes"])
-        for q in json.loads((PROJECT / "evaluation" / "qrels.json").read_text(encoding="utf-8"))["judgments"]
-    }
+    from evaluation.dataset import load_json, validate_dataset
+    qrels = load_json(PROJECT / "evaluation" / "qrels.json")
+    holdout = load_json(PROJECT / "evaluation" / "holdout_queries.json")
+    validated = validate_dataset(
+        {"queries": development}, holdout, qrels, frozen_notes,
+    )
+    status = assert_annotation_attestation(md, qrels["judgments"])
+    if validated["qrels_fully_reviewed"] != (status == "human_reviewed"):
+        raise AssertionError("Validated qrels disagree with review attestation")
+    labels = {q["query_id"]: set(q["relevant_notes"]) for q in qrels["judgments"]}
     baseline_rows, other_rows = [], []
     for row in rows:
         qid = row["id"]
@@ -174,7 +235,7 @@ def verify(path: Path) -> dict:
         "p95_ms": p["warm_query_p95_ms"],
         "peak_rss_mib": p["process_peak_rss_mib"],
         "delta_recall_at_3": comparison["delta_b_minus_a"]["mean_recall_at_3"],
-        "annotation_status": md["annotation_status"],
+        "annotation_status": status,
         "holdout_evaluated": False,
         "independent_verification": "PASS",
     }
