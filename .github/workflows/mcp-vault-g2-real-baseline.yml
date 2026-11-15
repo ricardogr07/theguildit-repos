@@ -1,0 +1,72 @@
+name: MCP Vault G2 Real Model Baseline
+
+on:
+  pull_request:
+    branches: ["codex/mcp-vault-colab"]
+    paths:
+      - "projects/mcp-vault-search/**"
+      - ".github/workflows/mcp-vault-g2-real-baseline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-model-baseline:
+    # Expensive model download: only the G2 implementation PR, or explicit dispatch.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/g2-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: projects/mcp-vault-search
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Capture the exact reviewed PR commit, not a synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned semantic dependencies
+        run: uv sync --locked --extra semantic --python 3.11
+
+      - name: Run offline correctness tests
+        run: uv run --locked --extra semantic --python 3.11 python -m unittest discover -s tests -v
+
+      - name: Run real CPU embeddings and preserve full results
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python run_g2_baseline.py \
+            --output baseline_real.json \
+            --summary baseline_summary.json \
+            2>&1 | tee g2-run.log
+
+      - name: Independently verify saved results
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --extra semantic --python 3.11 python verify_g2_baseline.py \
+            --output baseline_real.json \
+            2>&1 | tee g2-verify.log
+
+      - name: Upload G2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g2-real-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/mcp-vault-search/baseline_real.json
+            projects/mcp-vault-search/baseline_summary.json
+            projects/mcp-vault-search/g2-run.log
+            projects/mcp-vault-search/g2-verify.log
+          if-no-files-found: warn
+          retention-days: 90
