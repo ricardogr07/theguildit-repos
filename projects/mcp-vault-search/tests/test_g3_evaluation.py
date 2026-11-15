@@ -88,7 +88,10 @@ class DatasetValidationTest(TestCase):
             validate_legacy_queries(historical)
 
     def test_holdout_guard_blocks_unreviewed_labels_before_model_load(self):
-        with patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture):
+        with (
+            patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture),
+            patch.dict(sys.modules, {"sentence_transformers": None}),
+        ):
             with patch.object(sys, "argv", [
                 "run_expanded.py", "--split", "holdout", "--allow-holdout",
             ]):
@@ -96,13 +99,19 @@ class DatasetValidationTest(TestCase):
                     run()
 
     def test_provisional_development_requires_explicit_permission(self):
-        with patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture):
+        with (
+            patch("evaluation.run_expanded.load_json", side_effect=load_provisional_fixture),
+            patch.dict(sys.modules, {"sentence_transformers": None}),
+        ):
             with patch.object(sys, "argv", ["run_expanded.py", "--split", "development"]):
                 with self.assertRaisesRegex(ValueError, "allow-provisional"):
                     run()
 
     def test_holdout_without_opt_in_remains_blocked_after_qrels_are_reviewed(self):
-        with patch("evaluation.run_expanded.load_json", side_effect=load_approved_fixture):
+        with (
+            patch("evaluation.run_expanded.load_json", side_effect=load_approved_fixture),
+            patch.dict(sys.modules, {"sentence_transformers": None}),
+        ):
             with patch.object(sys, "argv", ["run_expanded.py", "--split", "holdout"]):
                 with self.assertRaisesRegex(ValueError, "allow-holdout"):
                     run()
