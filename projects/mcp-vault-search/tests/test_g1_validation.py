@@ -4,6 +4,7 @@ import runpy
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -162,3 +163,29 @@ class EvaluatorFailureTest(TestCase):
                 with self.assertRaises(SystemExit) as failure:
                     evaluator["main"]()
         self.assertNotEqual(failure.exception.code, 0)
+
+    def test_missing_corpus_is_an_error_not_a_successful_benchmark(self):
+        script = Path(__file__).resolve().parents[1] / "evaluate_semantic.py"
+        evaluator = runpy.run_path(str(script), run_name="g1_missing_corpus_test")
+        def missing_vault(_):
+            raise ValueError("MISSING_SYNTHETIC_CORPUS")
+        with patch.dict(evaluator["main"].__globals__, {"vault_root": missing_vault}):
+            with patch.dict(sys.modules, {"sentence_transformers": SimpleNamespace()}):
+                with patch.object(sys, "argv", [str(script)]):
+                    with self.assertRaisesRegex(ValueError, "MISSING_SYNTHETIC_CORPUS"):
+                        evaluator["main"]()
+
+    def test_model_initialization_failure_is_not_swallowed(self):
+        script = Path(__file__).resolve().parents[1] / "evaluate_semantic.py"
+        evaluator = runpy.run_path(str(script), run_name="g1_model_failure_test")
+        class BrokenModel:
+            def __init__(self, *args, **kwargs):
+                raise RuntimeError("MODEL_INITIALIZATION_FAILED")
+        with TemporaryDirectory() as temp:
+            with patch.dict(evaluator["main"].__globals__, {"vault_root": lambda _: Path(temp)}):
+                with patch.dict(sys.modules, {
+                    "sentence_transformers": SimpleNamespace(SentenceTransformer=BrokenModel)
+                }):
+                    with patch.object(sys, "argv", [str(script)]):
+                        with self.assertRaisesRegex(RuntimeError, "MODEL_INITIALIZATION_FAILED"):
+                            evaluator["main"]()
