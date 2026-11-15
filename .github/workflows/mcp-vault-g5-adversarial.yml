@@ -2,7 +2,7 @@ name: MCP Vault G5 Adversarial Replay
 
 on:
   pull_request:
-    branches: ["codex/g4-retrieval-performance-experiments"]
+    branches: ["codex/g4-retrieval-performance-experiments", "codex/mcp-vault-colab"]
     paths:
       - "projects/mcp-vault-search/**"
       - ".github/workflows/mcp-vault-g5-adversarial.yml"
