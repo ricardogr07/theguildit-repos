@@ -10,6 +10,8 @@ import math
 import subprocess
 from pathlib import Path
 
+from evaluation.dataset import load_json, validate_dataset
+
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent
@@ -23,6 +25,35 @@ def close(left, right) -> bool:
     return math.isclose(left, right, rel_tol=0, abs_tol=1e-12)
 
 
+G3_REQUIRED_SOURCES = {
+    "evaluation/run_expanded.py",
+    "evaluation/metrics.py",
+    "evaluation/dataset.py",
+    "evaluation/historical_queries.json",
+    "evaluation/development_queries.json",
+    "evaluation/holdout_queries.json",
+    "evaluation/qrels.json",
+    "src/mcp_vault_search/semantic.py",
+    "uv.lock",
+}
+
+
+def assert_approval_attestation(metadata: dict, aggregate: dict, validated: dict, split: str) -> None:
+    """No generated JSON can proclaim reviewed labels when the qrels disagree."""
+    reviewed = validated["qrels_fully_reviewed"]
+    if metadata.get("dataset_validation") != validated:
+        raise AssertionError("Dataset validation metadata conflicts with actual qrels")
+    if metadata.get("human_review_completed") is not reviewed:
+        raise AssertionError("Report human-review flag conflicts with actual qrels")
+    expected_status = "human_reviewed" if reviewed else "provisional_unreviewed"
+    if aggregate.get("annotation_status") != expected_status:
+        raise AssertionError("Report approval status conflicts with actual qrels")
+    if aggregate.get("not_a_release_gate_without_review") is not (not reviewed):
+        raise AssertionError("Release-approval flag conflicts with actual qrels")
+    if split == "holdout" and not reviewed:
+        raise AssertionError("Unreviewed holdout report cannot pass independent verification")
+
+
 def verify(output: Path, expected_split: str = "development") -> dict:
     report = json.loads(output.read_text(encoding="utf-8"))
     metadata, aggregate, rows = report["metadata"], report["metrics"], report["results"]
@@ -31,9 +62,26 @@ def verify(output: Path, expected_split: str = "development") -> dict:
     ).strip()
     if actual_sha != metadata["git_commit"]:
         raise AssertionError("Se verificó un SHA distinto del usado en el benchmark")
+    if set(metadata["source_sha256"]) != G3_REQUIRED_SOURCES:
+        raise AssertionError("Incomplete or unexpected G3 source-hash manifest")
     for name, hash_value in metadata["source_sha256"].items():
         if digest(PROJECT / name) != hash_value:
             raise AssertionError(f"Archivo de código/dataset modificado: {name}")
+        blob = subprocess.check_output(
+            ["git", "show", "HEAD:projects/mcp-vault-search/" + name],
+            cwd=PROJECT,
+        )
+        if hashlib.sha256(blob).hexdigest() != hash_value:
+            raise AssertionError(f"Source file hash does not match committed Git blob: {name}")
+    historical = json.loads(
+        (PROJECT / "evaluate_semantic_results_checkpoint_fixes.json").read_text(encoding="utf-8")
+    )[0]["evaluation_metadata"]
+    if metadata["corpus_sha256"] != historical["corpus_sha256"]:
+        raise AssertionError("Corpus manifest differs from frozen historical notes")
+    if (metadata["model_name"], metadata["model_revision"]) != (
+        historical["model_name"], historical["model_revision"]
+    ):
+        raise AssertionError("Embedding model or revision changed")
     for name, hash_value in metadata["corpus_sha256"].items():
         if digest(PROJECT / "examples" / "vault" / name) != hash_value:
             raise AssertionError(f"Archivo de corpus modificado: {name}")
@@ -47,10 +95,13 @@ def verify(output: Path, expected_split: str = "development") -> dict:
         else "holdout_queries.json"
     )
     queries = json.loads(query_file.read_text(encoding="utf-8"))["queries"]
-    qrels = {
-        item["query_id"]: item
-        for item in json.loads((HERE / "qrels.json").read_text(encoding="utf-8"))["judgments"]
-    }
+    development = load_json(HERE / "development_queries.json")
+    holdout = load_json(HERE / "holdout_queries.json")
+    full_qrels = load_json(HERE / "qrels.json")
+    available = set(metadata["corpus_sha256"])
+    validated = validate_dataset(development, holdout, full_qrels, available)
+    assert_approval_attestation(metadata, aggregate, validated, expected_split)
+    qrels = {item["query_id"]: item for item in full_qrels["judgments"]}
     if [row["id"] for row in rows] != [row["id"] for row in queries]:
         raise AssertionError("Las consultas no coinciden con el split congelado")
     if len(rows) != (16 if expected_split == "development" else 8):
@@ -69,6 +120,8 @@ def verify(output: Path, expected_split: str = "development") -> dict:
         ranked = [item["note"] for item in ranked_rows]
         if len(ranked) != len(set(ranked)):
             raise AssertionError("Ranking contiene documentos duplicados")
+        if set(ranked) != available:
+            raise AssertionError("Ranking contains notes outside the frozen corpus or is incomplete")
         if len(ranked) < 10 or row["top_10_notes"] != ranked[:10]:
             raise AssertionError("El top-10 es incompleto o incorrecto")
         for position, result in enumerate(ranked_rows, 1):
