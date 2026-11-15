@@ -1,0 +1,90 @@
+{
+  "gate": "G2",
+  "issue": 6,
+  "pr": 12,
+  "status": "REAL_MODEL_BASELINE_VERIFIED",
+  "benchmark_commit": "8b0d1e73c40486430e00f199658563be6b03b410",
+  "workflow": "MCP Vault G2 Real Model Baseline",
+  "workflow_run_id": 43674293457,
+  "workflow_url": "https://github.com/ricardogr07/theguildit-repos/actions/runs/43674293457",
+  "artifact_id": 14145414073,
+  "artifact_url": "https://github.com/ricardogr07/theguildit-repos/actions/runs/43674293457/artifacts/14145414073",
+  "artifact_retention_days": 90,
+  "files": {
+    "baseline_real.json": {
+      "sha256": "8130da70e6313aa3fe96b3b494100e5189dbe5fccad65353ca40361c415bed78",
+      "bytes": 67108
+    },
+    "baseline_summary.json": {
+      "sha256": "9de52c84b48c339573616e3de318144e24d8524cde7a29458cfb6cc6efc19f94",
+      "bytes": 2006
+    },
+    "g2-run.log": {
+      "sha256": "8604d35b7f9d577d24052808af5b39ec4aea06e84e22849e518f1850b9dbadae"
+    },
+    "g2-verify.log": {
+      "sha256": "79c8577ece925599b5f93e440f163e8573d86bca8a75d1206eeb4b4b7340152d"
+    }
+  },
+  "model": {
+    "name": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "device": "cpu",
+    "python": "3.11.18",
+    "packages": {
+      "sentence-transformers": "6.2.0",
+      "transformers": "5.21.0",
+      "torch": "2.14.1",
+      "numpy": "2.4.6"
+    },
+    "system": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+    "cpu_count": 4
+  },
+  "corpus": {
+    "notes": 12,
+    "chunks": 22,
+    "hashes_matched_historical": true,
+    "lockfile_sha256": "06c33f6b484dea191115e7d124cb204a79ac12f5c6cd4382093de01237ea48c1"
+  },
+  "historical_comparison": {
+    "query_count": 4,
+    "historical_pass": 2,
+    "current_pass": 2,
+    "target_ranks": [
+      5,
+      1,
+      1,
+      3
+    ],
+    "distractor_ranks": [
+      1,
+      3,
+      2,
+      2
+    ],
+    "single_target_recall_at_3": 0.75,
+    "single_target_recall_at_5": 1,
+    "single_target_mrr_at_10": 0.6333333333333334,
+    "matches_historical_ranks": true,
+    "verified_by_independent_script": true
+  },
+  "unit_ci": {
+    "workflow_run_id": 43674293471,
+    "workflow_url": "https://github.com/ricardogr07/theguildit-repos/actions/runs/43674293471",
+    "jobs_passed": 5,
+    "unique_tests_discovered": 57,
+    "ubuntu_passed": 56,
+    "ubuntu_skipped": 1,
+    "windows_passed": 57,
+    "windows_skipped": 0
+  },
+  "observations": [
+    "The synthetic corpus and four historical queries were unchanged.",
+    "The documented benchmark was rerun with real CPU embeddings, not a mock.",
+    "Some source code hashes differ from the old historical report, though the ranks exactly match.",
+    "Relevance judgments with multiple targets will be addressed in G3.",
+    "The full JSON artifact is retained by GitHub for 90 days; do not treat the retention as permanent archival.",
+    "The benchmark git SHA identifies the exact functional evaluation commit; later documentation commits do not invalidate its source hashes but must be tested before merge."
+  ],
+  "next_step": "Review PR, retain verified artifacts, confirm CI on final head, then owner merges. Do not start G3 until approved and merged."
+}

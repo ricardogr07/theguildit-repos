@@ -77,6 +77,24 @@ uv run --locked --extra semantic python evaluate_semantic.py --output evaluate_s
 
 No sobrescribas archivos de resultados históricos: usa un nombre de salida diferente para cada ejecución, junto al SHA y entorno correspondientes. La corrida histórica de `f6fd8e2` logró 2/4 con los objetivos y distractores originales. El reporte nuevo conserva esas consultas y registra versiones y huellas para comparar las correcciones. [Análisis de relevancia](CORPUS_ANALYSIS.md).
 
+## Reproducir el baseline semántico con el modelo real (G2)
+
+La comprobación del modelo real se ejecuta por separado de las pruebas unitarias, que usan embeddings simulados. Usa el corpus sintético versionado y **mantén intactas las cuatro consultas históricas**.
+
+Desde `projects/mcp-vault-search`:
+
+```powershell
+uv sync --locked --extra semantic --python 3.11
+uv run --locked --extra semantic --python 3.11 python run_g2_baseline.py --output baseline_real.json --summary baseline_summary.json
+uv run --locked --extra semantic --python 3.11 python verify_g2_baseline.py --output baseline_real.json
+```
+
+`run_g2_baseline.py` descarga el modelo multilingüe fijado por `MODEL_REVISION` si no está disponible, indexa las 12 notas y produce los rankings por documento, métricas Recall@3/5 y MRR@10, y hashes/verificaciones del entorno. La ejecución falla si cambian el corpus, el modelo o las etiquetas originales, si no se observan suficientes notas únicas para top 10, o si los cálculos independientes divergen.
+
+`verify_g2_baseline.py` **no necesita descargar el modelo**. Audita el JSON generado contra los archivos presentes y el commit del checkout. Ejecuta ambos comandos en la misma revisión de Git; el JSON registra su SHA exacto y el verificador rechaza un checkout distinto.
+
+Los resultados generados se ignoran en Git para evitar confundir datos de una corrida local con el histórico. La corrida G2 validada en CI, su artefacto, hashes y Definition of Done están enlazados en [docs/gates/G2/G2_DOD_REPORT.md](docs/gates/G2/G2_DOD_REPORT.md). El artefacto de GitHub Actions se conserva durante 90 días.
+
 ## Claude Desktop
 
 Ejemplo para Windows:
