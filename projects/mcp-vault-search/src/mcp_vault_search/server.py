@@ -81,17 +81,22 @@ if _semantic_enabled:
     @mcp.tool(annotations=ToolAnnotations(read_only_hint=True))
     def search_semantic(query: str, limit: int = 5) -> str:
         """Busca notas por similitud semántica usando embeddings."""
+        if not query.strip():
+            raise ToolError("La consulta no puede estar vacía")
+        if limit < 1 or limit > 50:
+            raise ToolError("limit debe estar entre 1 y 50")
         try:
             embedder = _get_embedder()
             index = _ensure_semantic_index()
             results = semantic_search(index, query, embedder, configured_root(), limit)
-        except ValueError as exc:
-            raise ToolError(str(exc)) from exc
         except ToolError:
             raise
+        except ValueError as exc:
+            logger.warning("Datos inválidos durante búsqueda semántica: %s", exc)
+            raise ToolError("Índice o embeddings semánticos inválidos; consulta los registros del servidor") from exc
         except Exception as exc:
             logger.exception("Error en búsqueda semántica")
-            raise ToolError(f"Error interno: {exc}") from exc
+            raise ToolError("Error interno en búsqueda semántica; consulta los registros del servidor") from exc
 
         return json.dumps(results, ensure_ascii=False, indent=2)
 

@@ -69,13 +69,13 @@ La primera consulta carga en CPU `sentence-transformers/paraphrase-multilingual-
 
 Antes de devolver resultados se comprueba cada nota candidata una vez por consulta. Si cambió cualquier parte de su contenido, incluida la indentación o los finales de línea, sus fragmentos se omiten. Las notas retiradas, ilegibles o sustituidas por enlaces también se omiten. Reinicia el proceso para indexar ediciones y notas nuevas. Durante la indexación, las notas ilegibles se omiten con diagnóstico en stderr. El servidor conserva los límites de acceso documentados abajo.
 
-La suite usa un modelo simulado y una prueba del proceso MCP para comprobar las ediciones y los borrados durante la misma sesión. La evaluación de recuperación con el modelo real se ejecuta por separado.
+La suite usa un modelo simulado y una prueba del proceso MCP para comprobar las ediciones y los borrados durante la misma sesión. Valida que los vectores de índice y consulta tengan dimensión consistente, valores finitos y norma L2 aproximadamente igual a 1. Un embedding corrupto se rechaza; no se devuelve un ranking con puntajes no fiables. La evaluación de recuperación con el modelo real se ejecuta por separado.
 
 ```powershell
-uv run --locked --extra semantic python evaluate_semantic.py --output evaluate_semantic_results_checkpoint_fixes.json
+uv run --locked --extra semantic python evaluate_semantic.py --output evaluate_semantic_results_local.json
 ```
 
-La corrida histórica de `f6fd8e2` logró 2/4 con los objetivos y distractores originales. El reporte nuevo conserva esas consultas y registra versiones y huellas para comparar las correcciones. [Análisis de relevancia](CORPUS_ANALYSIS.md).
+No sobrescribas archivos de resultados históricos: usa un nombre de salida diferente para cada ejecución, junto al SHA y entorno correspondientes. La corrida histórica de `f6fd8e2` logró 2/4 con los objetivos y distractores originales. El reporte nuevo conserva esas consultas y registra versiones y huellas para comparar las correcciones. [Análisis de relevancia](CORPUS_ANALYSIS.md).
 
 ## Claude Desktop
 
